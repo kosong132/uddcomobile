@@ -1,19 +1,71 @@
-// src/screens/Auth/RegisterScreen.js
-import React from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import React, { useState } from 'react';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
 import AuthLayout from '../../layouts/AuthLayout';
-
+import { register } from '../../services/authService';
 import styles from './styles';
 
 const RegisterScreen = ({ navigation }) => {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleRegister = async () => {
+    // Validation: Check if any field is empty
+    if (!username || !email || !phoneNumber || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return; // Prevent form submission
+    }
+  
+    try {
+      // Attempt to register
+      await register(username, email, phoneNumber, password);
+      Alert.alert('Success', 'Registered successfully!');
+      setTimeout(() => {
+        navigation.navigate('SignIn');
+      }, 1000); // Wait 1 second before navigating
+    } catch (error) {
+      // Handle duplicate username or email
+      if (error.response?.data === 'Username already taken') {
+        Alert.alert('Register failed', 'This username is already taken, please choose another.');
+      } else if (error.response?.data === 'Email already in use') {
+        Alert.alert('Register failed', 'This email is already in use, please choose another.');
+      } else {
+        Alert.alert('Register failed', error.response?.data || 'Something went wrong');
+      }
+    }
+  };
+  
+
   return (
     <AuthLayout title="Register" subtitle="Join us now">
-      <TextInput placeholder="Username" style={styles.input} />
-      <TextInput placeholder="Email" style={styles.input} />
-      <TextInput placeholder="Phone Number" style={styles.input} />
-      <TextInput placeholder="Password" secureTextEntry style={styles.input} />
+      <TextInput
+        placeholder="Username"
+        value={username}
+        onChangeText={setUsername}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Phone Number"
+        value={phoneNumber}
+        onChangeText={setPhoneNumber}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Password"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        style={styles.input}
+      />
 
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>Register</Text>
       </TouchableOpacity>
 
@@ -25,4 +77,3 @@ const RegisterScreen = ({ navigation }) => {
 };
 
 export default RegisterScreen;
-
