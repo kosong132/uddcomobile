@@ -5,7 +5,7 @@ import { View, Image, Text, StyleSheet } from 'react-native';
 const SplashScreen = ({ navigation }) => {
   useEffect(() => {
     const timeout = setTimeout(() => {
-      navigation.replace('App'); // switch to App screen
+      navigation.replace('SignIn');// switch to SignIn screen
     }, 3000); // 3 seconds
 
     return () => clearTimeout(timeout);
