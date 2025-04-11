@@ -26,15 +26,22 @@ const RegisterScreen = ({ navigation }) => {
       }, 1000); // Wait 1 second before navigating
     } catch (error) {
       // Handle duplicate username or email
-      if (error.response?.data === 'Username already taken') {
-        Alert.alert('Register failed', 'This username is already taken, please choose another.');
-      } else if (error.response?.data === 'Email already in use') {
-        Alert.alert('Register failed', 'This email is already in use, please choose another.');
+      if (error.response) {
+        const errorMessage = error.response?.data;
+        if (errorMessage === 'Username already taken') {
+          Alert.alert('Register failed', 'This username is already taken, please choose another.');
+        } else if (errorMessage === 'Email already in use') {
+          Alert.alert('Register failed', 'This email is already in use, please choose another.');
+        } else {
+          Alert.alert('Register failed', errorMessage || 'Something went wrong');
+        }
       } else {
-        Alert.alert('Register failed', error.response?.data || 'Something went wrong');
+        // If there is no response (network error, etc.)
+        Alert.alert('Register failed', 'Something went wrong, please try again later.');
       }
     }
   };
+  
   
 
   return (

@@ -1,27 +1,37 @@
-// src/screens/Auth/ForgotPasswordScreen.js
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native'; 
+import { View, TextInput, TouchableOpacity, Text, Alert } from 'react-native'; 
 import AuthLayout from '../../layouts/AuthLayout';
-import { requestResetPassword } from '../../services/authService';
+import { requestMobileResetOtp } from '../../services/authService'; // ✅ use correct import
 import styles from './styles';
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
+
   const handleForgot = async () => {
     try {
-      await requestResetPassword(email);
-      Alert.alert('Success', 'Check your email for the reset link');
+      await requestMobileResetOtp(email); // API call
+      Alert.alert('Success', 'A 6-digit OTP has been sent to your email.');
+      navigation.navigate('ResetPassword', { email }); // go to next screen
     } catch (error) {
-      Alert.alert('Error', error.response?.data || 'Something went wrong');
+      console.error('Forgot password error:', error); // 🔍 Log full error
+  
+      Alert.alert(
+        'Error',
+        error.response?.data || error.message || 'Something went wrong'
+      );
     }
   };
   
   return (
     <AuthLayout title="Reset Password" subtitle="Enter your email to reset">
-       <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} />
-
+      <TextInput
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        style={styles.input}
+      />
       <TouchableOpacity style={styles.button} onPress={handleForgot}>
-        <Text style={styles.buttonText}>Send Reset Link</Text>
+        <Text style={styles.buttonText}>Send OTP</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
@@ -32,4 +42,3 @@ const ForgotPasswordScreen = ({ navigation }) => {
 };
 
 export default ForgotPasswordScreen;
-

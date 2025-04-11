@@ -15,9 +15,24 @@ export const register = (username, email, phoneNumber, password) => {
   });
 };
 
-export const requestResetPassword = (email) => {
-  return axios.post(`${API_URL}/request-reset-password`, null, {
+export const requestMobileResetOtp = async (email) => {
+  const response = await axios.post(`${API_URL}/request-reset-password/mobile`, null, {
     params: { email },
   });
+  return response.data;
 };
 
+export const resetPassword = async (otp, newPassword) => {
+  try {
+    const response = await axios.post(`${API_URL}/reset-password/mobile`, {}, {
+      params: {
+        otp: otp.trim(),
+        newPassword: newPassword,
+      },
+    });
+    
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

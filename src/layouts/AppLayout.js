@@ -1,31 +1,34 @@
-// import React from 'react';
-// import { View, StyleSheet, Image } from 'react-native';
+// src/layouts/AppLayout.js
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import TopBar from '../components/TopBar';
+import BottomNavBar from '../components/BottomNavBar';
 
-// const AppLayout = ({ children }) => {
-//   return (
-//     <View style={styles.container}>
-//       <Image source={require('../assets/logo.png')} style={styles.logo} />
-//       <View style={styles.content}>{children}</View>
-//       {/* Add your bottom navigation here later */}
-//     </View>
-//   );
-// };
+const AppLayout = ({ children }) => {
+  const insets = useSafeAreaInsets();
 
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     paddingTop: 40,
-//   },
-//   logo: {
-//     width: 120,
-//     height: 40,
-//     alignSelf: 'center',
-//     resizeMode: 'contain',
-//     marginBottom: 10,
-//   },
-//   content: {
-//     flex: 1,
-//   },
-// });
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <TopBar />
+      <View style={styles.content}>
+        {children}
+      </View>
+      <BottomNavBar />
+    </View>
+  );
+};
 
-// export default AppLayout;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+    marginBottom: 60,
+  },
+});
+
+export default AppLayout;
