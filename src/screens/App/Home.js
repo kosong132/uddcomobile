@@ -4,31 +4,31 @@ import AppLayout from '../../layouts/AppLayout';
 // import { Feather } from '@expo/vector-icons';
 import Feather from 'react-native-vector-icons/Feather';
 
-const Home = () => {
+const Home = ({ navigation }) => {
   const products = [
     {
-      id: 1,
+      id: '1',
       name: 'Urban Artistry Tee',
       description: '100% Premium Cotton',
       price: 'RM 24.99',
       image: require('../../assets/urban-tee.png'),
     },
     {
-      id: 2,
+      id: '2',
       name: 'Collar T',
       description: 'Cotton-Polyester Blend',
       price: 'RM 39.00',
       image: require('../../assets/collar-t.png'),
     },
     {
-      id: 3,
+      id: '3',
       name: 'Pro Hoops Jersey',
       description: 'Performance Polyester',
       price: 'RM 69.00',
       image: require('../../assets/hoops-jersey.png'),
     },
     {
-      id: 4,
+      id: '4',
       name: 'Basketball Jersey Set',
       description: 'Lightweight Mesh Polyester',
       price: 'RM 79.00',
@@ -38,28 +38,32 @@ const Home = () => {
 
   return (
     <AppLayout>
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Discover</Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterButtonText}>All Products</Text>
-          <Feather name="chevron-down" size={18} color="#000" />
-        </TouchableOpacity>
-      </View>
-      
-      <ScrollView style={styles.productList}>
-        <View style={styles.productGrid}>
-          {products.map((product) => (
-            <TouchableOpacity key={product.id} style={styles.productCard}>
-              <Image source={product.image} style={styles.productImage} />
-              <Text style={styles.productName}>{product.name}</Text>
-              <Text style={styles.productDescription}>{product.description}</Text>
-              <Text style={styles.productPrice}>{product.price}</Text>
-            </TouchableOpacity>
-          ))}
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Discover</Text>
+          <TouchableOpacity style={styles.filterButton}>
+            <Text style={styles.filterButtonText}>All Products</Text>
+            <Feather name="chevron-down" size={18} color="#000" />
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-    </View>
+
+        <ScrollView style={styles.productList}>
+          <View style={styles.productGrid}>
+            {products.map((product) => (
+              <TouchableOpacity
+                key={product.id}
+                style={styles.productCard}
+                onPress={() => navigation.navigate('ProductDetails', { productId: product.id })}
+              >
+                <Image source={product.image} style={styles.productImage} />
+                <Text style={styles.productName}>{product.name}</Text>
+                <Text style={styles.productDescription}>{product.description}</Text>
+                <Text style={styles.productPrice}>{product.price}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
     </AppLayout>
   );
 };
