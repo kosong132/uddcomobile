@@ -11,6 +11,10 @@ const SignInScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
 
   const handleSignIn = async () => {
+    if (!username || !password) {
+      Alert.alert('Error', 'Please enter both username and password');
+      return;
+    }
         // Log what is being sent
         console.log("✅ [FRONTEND] Username", username);
         console.log("✅ [FRONTEND] Password:", password);
