@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import AppLayout from '../../layouts/AppLayout';
 import { useNavigation } from '@react-navigation/native';
 import { launchImageLibrary } from 'react-native-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -23,6 +24,24 @@ const ProfileScreen = () => {
         }
       }
     );
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Clear the authentication token from AsyncStorage
+      await AsyncStorage.removeItem('userToken');
+      
+      // Optionally, clear other user-related data like profile, preferences, etc.
+      // await AsyncStorage.removeItem('userProfile'); // Example for other data
+
+      // Navigate the user to the SignIn screen after logout
+      navigation.replace('SignIn'); // or use navigation.reset if you want to reset the entire navigation stack
+
+      Alert.alert('Success', 'You have been logged out.');
+    } catch (error) {
+      console.log('Error during logout:', error);
+      Alert.alert('Error', 'An error occurred during logout.');
+    }
   };
 
   const menuItems = [
@@ -64,7 +83,7 @@ const ProfileScreen = () => {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>

@@ -12,6 +12,8 @@ export const register = (username, email, phoneNumber, password) => {
     email,
     phoneNumber,
     password,
+    role: 'Customer',     // <-- Added
+    userLevel: 2          // <-- Added
   });
 };
 

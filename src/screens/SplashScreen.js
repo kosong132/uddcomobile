@@ -6,7 +6,7 @@ const SplashScreen = ({ navigation }) => {
   useEffect(() => {
     const timeout = setTimeout(() => {
       navigation.replace('SignIn');// switch to SignIn screen
-    }, 3000); // 3 seconds
+    }, 3000); // 3 second
 
     return () => clearTimeout(timeout);
   }, [navigation]);
