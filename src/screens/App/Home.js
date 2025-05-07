@@ -1,40 +1,25 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import AppLayout from '../../layouts/AppLayout';
-// import { Feather } from '@expo/vector-icons';
 import Feather from 'react-native-vector-icons/Feather';
+import axios from 'axios';
 
 const Home = ({ navigation }) => {
-  const products = [
-    {
-      id: '1',
-      name: 'Urban Artistry Tee',
-      description: '100% Premium Cotton',
-      price: 'RM 24.99',
-      image: require('../../assets/urban-tee.png'),
-    },
-    {
-      id: '2',
-      name: 'Collar T',
-      description: 'Cotton-Polyester Blend',
-      price: 'RM 39.00',
-      image: require('../../assets/collar-t.png'),
-    },
-    {
-      id: '3',
-      name: 'Pro Hoops Jersey',
-      description: 'Performance Polyester',
-      price: 'RM 69.00',
-      image: require('../../assets/hoops-jersey.png'),
-    },
-    {
-      id: '4',
-      name: 'Basketball Jersey Set',
-      description: 'Lightweight Mesh Polyester',
-      price: 'RM 79.00',
-      image: require('../../assets/basketball-set.png'),
-    },
-  ];
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axios.get('http://10.0.2.2:8080/products/all')
+      .then(response => {
+        setProducts(response.data);
+      })
+      .catch(error => {
+        console.error('❌ Error fetching products:', error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <AppLayout>
@@ -47,22 +32,26 @@ const Home = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.productList}>
-          <View style={styles.productGrid}>
-            {products.map((product) => (
-              <TouchableOpacity
-                key={product.id}
-                style={styles.productCard}
-                onPress={() => navigation.navigate('ProductDetails', { productId: product.id })}
-              >
-                <Image source={product.image} style={styles.productImage} />
-                <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productDescription}>{product.description}</Text>
-                <Text style={styles.productPrice}>{product.price}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
+        {loading ? (
+          <ActivityIndicator size="large" color="#000" style={{ marginTop: 50 }} />
+        ) : (
+          <ScrollView style={styles.productList}>
+            <View style={styles.productGrid}>
+              {products.map((product) => (
+                <TouchableOpacity
+                  key={product.id}
+                  style={styles.productCard}
+                  onPress={() => navigation.navigate('ProductDetails', { productId: product.id })}
+                >
+                  <Image source={{ uri: product.imageUrl }} style={styles.productImage} />
+                  <Text style={styles.productName}>{product.name}</Text>
+                  <Text style={styles.productDescription}>{product.description}</Text>
+                  <Text style={styles.productPrice}>RM {product.price}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        )}
       </View>
     </AppLayout>
   );
@@ -121,16 +110,50 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 14,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   productDescription: {
     fontSize: 12,
     color: '#666',
     marginBottom: 5,
+    textAlign: 'center',
   },
   productPrice: {
     fontSize: 14,
     fontWeight: 'bold',
+    color: '#000',
   },
 });
 
 export default Home;
+
+// const products = [
+//   {
+//     id: '1',
+//     name: 'Urban Artistry Tee',
+//     description: '100% Premium Cotton',
+//     price: 'RM 24.99',
+//     image: require('../../assets/urban-tee.png'),
+//   },
+//   {
+//     id: '2',
+//     name: 'Collar T',
+//     description: 'Cotton-Polyester Blend',
+//     price: 'RM 39.00',
+//     image: require('../../assets/collar-t.png'),
+//   },
+//   {
+//     id: '3',
+//     name: 'Pro Hoops Jersey',
+//     description: 'Performance Polyester',
+//     price: 'RM 69.00',
+//     image: require('../../assets/hoops-jersey.png'),
+//   },
+//   {
+//     id: '4',
+//     name: 'Basketball Jersey Set',
+//     description: 'Lightweight Mesh Polyester',
+//     price: 'RM 79.00',
+//     image: require('../../assets/basketball-set.png'),
+//   },
+// ];

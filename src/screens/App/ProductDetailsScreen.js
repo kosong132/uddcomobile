@@ -1,317 +1,247 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Dimensions } from 'react-native';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
+import axios from 'axios';
 
 const ProductDetailsScreen = ({ route, navigation }) => {
-  const { productId } = route.params;
+  const { productId } = route.params;  // Get productId from route params
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [selectedCustomization, setSelectedCustomization] = useState(null);
 
+  // Fetch product data based on productId
   useEffect(() => {
-    const productData = getDummyProduct(productId);
-    setProduct(productData);
-    if (productData?.colors?.length > 0) {
-      setSelectedColor(productData.colors[0]);
-    }
-    if (productData?.sizes?.length > 0) {
-      setSelectedSize(productData.sizes[0]);
-    }
-    setLoading(false);
-  }, [productId]);
+    const fetchProduct = async () => {
+      try {
+        const response = await axios.get(`http://10.0.2.2:8080/products/${productId}`);
+        const productData = response.data;
+        setProduct(productData);
 
-  const getDummyProduct = (id) => {
-    const dummyProducts = {
-      '1': {
-        id: '1',
-        name: 'Urban Artistry Tee',
-        material: '100% Premium Cotton',
-        price: 24.99,
-        description:
-          'Embrace your creativity with our Urban Artistry Tee. Featuring a soft, breathable fit and vibrant custom prints, this t-shirt is perfect for casual outings or showcasing your unique style.',
-        image: require('../../assets/urban-tee.png'),
-        colors: ['Grey', 'White', 'Black', 'Navy Blue'],
-        sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-      },
-      '2': {
-        id: '2',
-        name: 'Collar T',
-        material: 'Cotton-Polyester Blend',
-        price: 39.0,
-        description:
-          'A stylish collar T-shirt for casual and semi-formal occasions. Soft and comfy fabric for all-day wear.',
-        image: require('../../assets/collar-t.png'),
-        colors: ['White', 'Black'],
-        sizes: ['S', 'M', 'L', 'XL'],
-      },
-      '3': {
-        id: '3',
-        name: 'Pro Hoops Jersey',
-        material: 'Performance Polyester',
-        price: 69.0,
-        description:
-          'Dominate the court with our Pro Hoops Jersey. Engineered for performance and style.',
-        image: require('../../assets/hoops-jersey.png'),
-        colors: ['Red', 'Blue', 'Black'],
-        sizes: ['M', 'L', 'XL'],
-      },
-      '4': {
-        id: '4',
-        name: 'Basketball Jersey Set',
-        material: 'Lightweight Mesh Polyester',
-        price: 79.0,
-        description:
-          'Complete basketball set including top and shorts. Designed for breathability and movement.',
-        image: require('../../assets/basketball-set.png'),
-        colors: ['Yellow', 'Black'],
-        sizes: ['S', 'M', 'L'],
-      },
+        // Set default values if available
+        if (productData.colors?.length > 0) {
+          setSelectedColor(productData.colors[0].name);  // Set default color
+        }
+
+        if (productData.availableSizes?.length > 0) {
+          setSelectedSize(productData.availableSizes[0]);  // Set default size
+        }
+
+        if (productData.customizationOptions?.length > 0) {
+          setSelectedCustomization(productData.customizationOptions[0]);  // Set default customization option
+        }
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    return dummyProducts[id];
-  };
+    fetchProduct();
+  }, [productId]);
 
   if (loading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#FF6B00" />
-      </View>
-    );
+    return <ActivityIndicator size="large" color="#0000ff" />;
   }
 
   if (!product) {
-    return (
-      <View style={styles.loaderContainer}>
-        <Text>Product not found</Text>
-      </View>
-    );
+    return <Text>Product not found</Text>;
   }
 
+  const handleGoToCustomize = () => {
+    // Navigate to CustomizeScreen and pass selected options as params
+    navigation.navigate('Customize', {
+      productId,
+      selectedColor,
+      selectedSize,
+      selectedCustomization,
+    });
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialIcons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <View style={styles.logoContainer}>
-          <Image source={require('../../assets/logo.png')} style={styles.logoImage} />
-          <Text style={styles.logoText}>UDD.Co</Text>
-        </View>
-        <TouchableOpacity style={styles.cartButton}>
-          <MaterialIcons name="shopping-cart" size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
+    <ScrollView style={styles.container}>
+      {/* Product Image */}
+      <Image
+        source={{ uri: product.imageUrl }}
+        style={styles.productImage}
+      />
 
-      {/* Scrollable content under header */}
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        {/* Product Image */}
-        <Image source={product.image} style={styles.productImage} />
+      {/* Product Details */}
+      <Text style={styles.productName}>{product.name}</Text>
+      <Text style={styles.productPrice}>${parseFloat(product.price).toFixed(2)}</Text>
+      <Text style={styles.productDescription}>{product.description}</Text>
 
-        {/* Product Details */}
-        <View style={styles.detailsContainer}>
-          <Text style={styles.productName}>{product.name}</Text>
-          <Text style={styles.productPrice}>RM {product.price.toFixed(2)}</Text>
-          <Text style={styles.materialText}>Fabric: {product.material}</Text>
-          <Text style={styles.descriptionText}>{product.description}</Text>
-
-          {/* Color Selection */}
-          <Text style={styles.sectionTitle}>Select Color:</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.colorsContainer}
-          >
-            {product.colors.map((color, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.colorOption,
-                  { borderColor: selectedColor === color ? '#FF6B00' : '#ddd' },
-                ]}
-                onPress={() => setSelectedColor(color)}
-              >
-                <Text style={styles.colorText}>{color}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          {/* Size Selection */}
-          <View style={styles.sizesContainer}>
-            {product.sizes.map((size, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.sizeOption,
-                  { borderColor: selectedSize === size ? '#FF6B00' : '#ddd' },
-                ]}
-                onPress={() => setSelectedSize(size)}
-              >
-                <Text
-                  style={[
-                    styles.sizeText,
-                    { color: selectedSize === size ? '#FF6B00' : '#333' },
-                  ]}
-                >
-                  {size}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Customize Button */}
+      {/* Colors Section */}
+      <Text style={styles.sectionTitle}>Colors</Text>
+      <View style={styles.optionContainer}>
+        {product.colors?.map((color, index) => (
           <TouchableOpacity
-            style={styles.customizeButton}
-            onPress={() =>
-              navigation.navigate('Customize', {
-                productId: product.id,
-                productName: product.name,
-                selectedColor: selectedColor,
-                selectedSize: selectedSize,
-                price: product.price,
-              })
-            }
+            key={index}
+            style={[
+              styles.colorButton,
+              { backgroundColor: color.name.toLowerCase(), borderWidth: selectedColor === color.name ? 3 : 1 }
+            ]}
+            onPress={() => setSelectedColor(color.name)}
           >
-            <Text style={styles.customizeButtonText}>Customize</Text>
+            {selectedColor === color.name && <View style={styles.checkMark} />}
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        ))}
+      </View>
+      <Text style={styles.selectedOptionText}>Selected Color: {selectedColor}</Text>
+
+      {/* Sizes Section */}
+      <Text style={styles.sectionTitle}>Sizes</Text>
+      <View style={styles.optionContainer}>
+        {product.availableSizes?.map((size, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.sizeButton,
+              { borderColor: selectedSize === size ? 'blue' : '#ddd', backgroundColor: selectedSize === size ? '#e0f7fa' : '#fff' }
+            ]}
+            onPress={() => setSelectedSize(size)}
+          >
+            <Text style={styles.sizeButtonText}>{size}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <Text style={styles.selectedOptionText}>Selected Size: {selectedSize}</Text>
+
+      {/* Customization Options Section */}
+      <Text style={styles.sectionTitle}>Customization Options</Text>
+      <View style={styles.optionContainer}>
+        {product.customizationOptions?.map((option, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.customizationButton,
+              { backgroundColor: selectedCustomization === option ? '#aaaaaa' : '#ddd' }
+            ]}
+            onPress={() => setSelectedCustomization(option)}
+          >
+            <Text style={styles.customizationButtonText}>{option}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <Text style={styles.selectedOptionText}>Selected Customization: {selectedCustomization}</Text>
+
+      {/* Button to go to CustomizeScreen */}
+      <TouchableOpacity
+        style={styles.customizeButton}
+        onPress={handleGoToCustomize}
+      >
+        <Text style={styles.customizeButtonText}>Go to Customize</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
-
-const { width } = Dimensions.get('window'); // Get screen width for responsiveness
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
     backgroundColor: '#fff',
   },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#efefef',
-  },
-  backButton: {
-    padding: 4,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logoImage: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-  },
-  logoText: {
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  cartButton: {
-    padding: 4,
-  },
-  contentContainer: {
-    paddingTop: 8,
-    paddingBottom: 32,
-    backgroundColor: '#fff',
-  },
-
   productImage: {
-    width: width - 32, // Use dynamic width with some margin for responsiveness
-    height: 350,
-    resizeMode: 'cover',
-    marginTop: 8,
-  },
-
-  detailsContainer: {
-    paddingHorizontal: 16,
+    width: '100%',
+    height: 250,
+    resizeMode: 'contain',
+    marginBottom: 20,
+    borderRadius: 10,
   },
   productName: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginTop: 16,
+    color: '#333',
   },
   productPrice: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#FF6B00',
-    marginBottom: 12,
+    color: '#388e3c',
+    marginTop: 8,
   },
-  materialText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-  },
-  descriptionText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#333',
-    marginBottom: 20,
+  productDescription: {
+    fontSize: 16,
+    marginTop: 8,
+    color: 'gray',
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
+    fontSize: 18,
+    marginTop: 24,
+    fontWeight: 'bold',
+    color: '#333',
   },
-  colorsContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  colorOption: {
-    borderWidth: 2,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  colorText: {
-    fontSize: 14,
-  },
-  sizesContainer: {
+  optionContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 24,
+    marginTop: 8,
+    justifyContent: 'flex-start',
   },
-  sizeOption: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 12,
-    marginBottom: 12,
-    alignItems: 'center',
+  colorButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    margin: 8,
     justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ddd',
   },
-  sizeText: {
-    fontSize: 14,
+  checkMark: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: 'green',
+  },
+  sizeButton: {
+    width: 80,
+    height: 40,
+    borderRadius: 8,
+    margin: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ddd',
+  },
+  sizeButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  customizationButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    margin: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ddd',
+  },
+  customizationButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  selectedOptionText: {
+    fontSize: 16,
+    marginTop: 8,
+    color: 'gray',
   },
   customizeButton: {
-    backgroundColor: '#FF6B00',
-    paddingVertical: 14,
+    backgroundColor: '#388e3c',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     borderRadius: 8,
+    marginTop: 20,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
   },
   customizeButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 

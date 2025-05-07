@@ -4,6 +4,7 @@ import { View,TextInput, StyleSheet, TouchableOpacity, Text, Alert } from 'react
 import AuthLayout from '../../layouts/AuthLayout';
 import { signIn } from '../../services/authService';
 import styles from './styles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SignInScreen = ({ navigation }) => {
   // const [email, setEmail] = useState('');
@@ -15,14 +16,19 @@ const SignInScreen = ({ navigation }) => {
       Alert.alert('Error', 'Please enter both username and password');
       return;
     }
-        // Log what is being sent
-        console.log("✅ [FRONTEND] Username", username);
-        console.log("✅ [FRONTEND] Password:", password);
+
+    console.log("✅ [FRONTEND] Username:", username);
+    console.log("✅ [FRONTEND] Password:", password);
+
     try {
       const response = await signIn(username, password);
-      Alert.alert('Success', 'Signed in successfully! ' + response.data.username);
-      // Store user info or token here using AsyncStorage (if needed)
-      navigation.navigate('Home'); // Navigate to Home screen after successful login
+      const userData = response.data;
+
+      // Save user info in AsyncStorage
+      await AsyncStorage.setItem('userData', JSON.stringify(userData));
+
+      Alert.alert('Success', 'Signed in successfully! ' + userData.username);
+      navigation.navigate('Home');
     } catch (error) {
       console.log("❌ [FRONTEND] Error:", error.response?.data || error.message);
       Alert.alert('Login failed', error.response?.data || 'Invalid credentials');

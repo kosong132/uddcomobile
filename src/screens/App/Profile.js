@@ -1,14 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import AppLayout from '../../layouts/AppLayout';
 import { useNavigation } from '@react-navigation/native';
 import { launchImageLibrary } from 'react-native-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
   const [userPhoto, setUserPhoto] = useState(null);
-  const [userName, setUserName] = useState('Anne Cho');
+  const [userName, setUserName] = useState('');
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userDataString = await AsyncStorage.getItem('userData');
+        if (userDataString) {
+          const userData = JSON.parse(userDataString);
+          setUserName(userData.username);
+        }
+      } catch (error) {
+        console.log('Failed to load user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const pickImage = async () => {
     launchImageLibrary(
@@ -28,15 +44,8 @@ const ProfileScreen = () => {
 
   const handleLogout = async () => {
     try {
-      // Clear the authentication token from AsyncStorage
-      await AsyncStorage.removeItem('userToken');
-      
-      // Optionally, clear other user-related data like profile, preferences, etc.
-      // await AsyncStorage.removeItem('userProfile'); // Example for other data
-
-      // Navigate the user to the SignIn screen after logout
-      navigation.replace('SignIn'); // or use navigation.reset if you want to reset the entire navigation stack
-
+      await AsyncStorage.removeItem('userData');
+      navigation.replace('SignIn');
       Alert.alert('Success', 'You have been logged out.');
     } catch (error) {
       console.log('Error during logout:', error);
@@ -67,7 +76,7 @@ const ProfileScreen = () => {
               <Text style={styles.editIcon}>✏️</Text>
             </View>
           </TouchableOpacity>
-          <Text style={styles.profileName}>{userName}</Text>
+          <Text style={styles.profileName}>{userName || 'Loading...'}</Text>
         </View>
 
         <View style={styles.sectionHeader}>
@@ -91,17 +100,15 @@ const ProfileScreen = () => {
   );
 };
 
-const MenuItem = ({ icon, title, onPress }) => {
-  return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-      <View style={styles.menuItemContent}>
-        <Text style={styles.menuIcon}>{icon}</Text>
-        <Text style={styles.menuTitle}>{title}</Text>
-      </View>
-      <Text style={styles.menuArrow}>➔</Text>
-    </TouchableOpacity>
-  );
-};
+const MenuItem = ({ icon, title, onPress }) => (
+  <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+    <View style={styles.menuItemContent}>
+      <Text style={styles.menuIcon}>{icon}</Text>
+      <Text style={styles.menuTitle}>{title}</Text>
+    </View>
+    <Text style={styles.menuArrow}>➔</Text>
+  </TouchableOpacity>
+);
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
