@@ -1,248 +1,242 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
-const ProductDetailsScreen = ({ route, navigation }) => {
-  const { productId } = route.params;  // Get productId from route params
+const safeColor = (name) => {
+const map = { aliceblue: 'aliceblue', antiquewhite: 'antiquewhite', aqua: 'aqua', aquamarine: 'aquamarine', azure: 'azure', beige: 'beige', bisque: 'bisque', black: 'black', blanchedalmond: 'blanchedalmond', blue: 'blue', blueviolet: 'blueviolet', brown: 'brown', burlywood: 'burlywood', cadetblue: 'cadetblue', chartreuse: 'chartreuse', chocolate: 'chocolate', coral: 'coral', cornflowerblue: 'cornflowerblue', cornsilk: 'cornsilk', crimson: 'crimson', cyan: 'cyan', darkblue: 'darkblue', darkcyan: 'darkcyan', darkgoldenrod: 'darkgoldenrod', darkgray: 'darkgray', darkgreen: 'darkgreen', darkkhaki: 'darkkhaki', darkmagenta: 'darkmagenta', darkolivegreen: 'darkolivegreen', darkorange: 'darkorange', darkorchid: 'darkorchid', darkred: 'darkred', darksalmon: 'darksalmon', darkseagreen: 'darkseagreen', darkslateblue: 'darkslateblue', darkslategray: 'darkslategray', darkturquoise: 'darkturquoise', darkviolet: 'darkviolet', deeppink: 'deeppink', deepskyblue: 'deepskyblue', dimgray: 'dimgray', dodgerblue: 'dodgerblue', firebrick: 'firebrick', floralwhite: 'floralwhite', forestgreen: 'forestgreen', fuchsia: 'fuchsia', gainsboro: 'gainsboro', ghostwhite: 'ghostwhite', gold: 'gold', goldenrod: 'goldenrod', gray: 'gray', green: 'green', greenyellow: 'greenyellow', honeydew: 'honeydew', hotpink: 'hotpink', indianred: 'indianred', indigo: 'indigo', ivory: 'ivory', khaki: 'khaki', lavender: 'lavender', lavenderblush: 'lavenderblush', lawngreen: 'lawngreen', lemonchiffon: 'lemonchiffon', lightblue: 'lightblue', lightcoral: 'lightcoral', lightcyan: 'lightcyan', lightgoldenrodyellow: 'lightgoldenrodyellow', lightgray: 'lightgray', lightgreen: 'lightgreen', lightpink: 'lightpink', lightsalmon: 'lightsalmon', lightseagreen: 'lightseagreen', lightskyblue: 'lightskyblue', lightslategray: 'lightslategray', lightsteelblue: 'lightsteelblue', lightyellow: 'lightyellow', lime: 'lime', limegreen: 'limegreen', linen: 'linen', magenta: 'magenta', maroon: 'maroon', mediumaquamarine: 'mediumaquamarine', mediumblue: 'mediumblue', mediumorchid: 'mediumorchid', mediumpurple: 'mediumpurple', mediumseagreen: 'mediumseagreen', mediumslateblue: 'mediumslateblue', mediumspringgreen: 'mediumspringgreen', mediumturquoise: 'mediumturquoise', mediumvioletred: 'mediumvioletred', midnightblue: 'midnightblue', mintcream: 'mintcream', mistyrose: 'mistyrose', moccasin: 'moccasin', navajowhite: 'navajowhite', navy: 'navy', oldlace: 'oldlace', olive: 'olive', olivedrab: 'olivedrab', orange: 'orange', orangered: 'orangered', orchid: 'orchid', palegoldenrod: 'palegoldenrod', palegreen: 'palegreen', paleturquoise: 'paleturquoise', palevioletred: 'palevioletred', papayawhip: 'papayawhip', peachpuff: 'peachpuff', peru: 'peru', pink: 'pink', plum: 'plum', powderblue: 'powderblue', purple: 'purple', red: 'red', rosybrown: 'rosybrown', royalblue: 'royalblue', saddlebrown: 'saddlebrown', salmon: 'salmon', sandybrown: 'sandybrown', seagreen: 'seagreen', seashell: 'seashell', sienna: 'sienna', silver: 'silver', skyblue: 'skyblue', slateblue: 'slateblue', slategray: 'slategray', snow: 'snow', springgreen: 'springgreen', steelblue: 'steelblue', tan: 'tan', teal: 'teal', thistle: 'thistle', tomato: 'tomato', turquoise: 'turquoise', violet: 'violet', wheat: 'wheat', white: 'white', whitesmoke: 'whitesmoke', yellow: 'yellow', yellowgreen: 'yellowgreen' };
+
+  
+  return map[name?.toLowerCase().trim()] || '#ccc';
+};
+
+const ProductDetails = ({ navigation, route }) => {
+  const { productId } = route.params;
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedCustomization, setSelectedCustomization] = useState(null);
 
-  // Fetch product data based on productId
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const response = await axios.get(`http://10.0.2.2:8080/products/${productId}`);
-        const productData = response.data;
-        setProduct(productData);
-
-        // Set default values if available
-        if (productData.colors?.length > 0) {
-          setSelectedColor(productData.colors[0].name);  // Set default color
-        }
-
-        if (productData.availableSizes?.length > 0) {
-          setSelectedSize(productData.availableSizes[0]);  // Set default size
-        }
-
-        if (productData.customizationOptions?.length > 0) {
-          setSelectedCustomization(productData.customizationOptions[0]);  // Set default customization option
-        }
-      } catch (error) {
-        console.error('Error fetching product:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduct();
+    axios.get(`http://10.0.2.2:8080/products/${productId}`)
+      .then(response => {
+        setProduct(response.data);
+      })
+      .catch(error => {
+        console.error('❌ Error fetching product details:', error);
+      })
+      .finally(() => setLoading(false));
   }, [productId]);
 
-  if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
-  }
-
-  if (!product) {
-    return <Text>Product not found</Text>;
-  }
-
   const handleGoToCustomize = () => {
-    // Navigate to CustomizeScreen and pass selected options as params
+    if (!selectedColor || !selectedSize || !selectedCustomization) {
+      alert('Please select color, size, and customization option.');
+      return;
+    }
+
     navigation.navigate('Customize', {
-      productId,
+      product,
       selectedColor,
       selectedSize,
-      selectedCustomization,
+      selectedCustomization
     });
   };
 
+  if (loading)
+    return <ActivityIndicator size="large" color="#ff5722" style={{ marginTop: 100 }} />;
+
+  if (!product)
+    return <Text style={{ padding: 20 }}>Product not found</Text>;
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Product Image */}
-      <Image
-        source={{ uri: product.imageUrl }}
-        style={styles.productImage}
-      />
-
-      {/* Product Details */}
-      <Text style={styles.productName}>{product.name}</Text>
-      <Text style={styles.productPrice}>${parseFloat(product.price).toFixed(2)}</Text>
-      <Text style={styles.productDescription}>{product.description}</Text>
-
-      {/* Colors Section */}
-      <Text style={styles.sectionTitle}>Colors</Text>
-      <View style={styles.optionContainer}>
-        {product.colors?.map((color, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.colorButton,
-              { backgroundColor: color.name.toLowerCase(), borderWidth: selectedColor === color.name ? 3 : 1 }
-            ]}
-            onPress={() => setSelectedColor(color.name)}
-          >
-            {selectedColor === color.name && <View style={styles.checkMark} />}
-          </TouchableOpacity>
-        ))}
+    <View style={{ flex: 1, backgroundColor: '#fefefe' }}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Product Details</Text>
+        <View style={{ width: 24 }} />
       </View>
-      <Text style={styles.selectedOptionText}>Selected Color: {selectedColor}</Text>
 
-      {/* Sizes Section */}
-      <Text style={styles.sectionTitle}>Sizes</Text>
-      <View style={styles.optionContainer}>
-        {product.availableSizes?.map((size, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.sizeButton,
-              { borderColor: selectedSize === size ? 'blue' : '#ddd', backgroundColor: selectedSize === size ? '#e0f7fa' : '#fff' }
-            ]}
-            onPress={() => setSelectedSize(size)}
-          >
-            <Text style={styles.sizeButtonText}>{size}</Text>
-          </TouchableOpacity>
-        ))}
+      <ScrollView contentContainerStyle={styles.content}>
+        <Image source={{ uri: product.imageUrl }} style={styles.productImage} />
+        <Text style={styles.productName}>{product.name}</Text>
+        <Text style={styles.productPrice}>RM {parseFloat(product.price).toFixed(2)}</Text>
+        <Text style={styles.productDescription}>{product.description}</Text>
+
+        {/* Colors */}
+        <Text style={styles.sectionTitle}>Colors</Text>
+        <View style={styles.optionContainer}>
+          {product.colors?.map((color, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.colorCircle,
+                {
+                  backgroundColor: safeColor(color.name),
+                  borderWidth: selectedColor === color.name ? 2 : 0,
+                  borderWidth: 2,
+                },
+              ]}
+              onPress={() => setSelectedColor(color.name)}
+            />
+          ))}
+        </View>
+        {selectedColor && (
+          <Text style={styles.selectedOptionText}>Selected Color: {selectedColor}</Text>
+        )}
+
+        {/* Sizes */}
+        <Text style={styles.sectionTitle}>Sizes</Text>
+        <View style={styles.optionContainer}>
+          {product.availableSizes?.map((size, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => setSelectedSize(size)}
+              style={[
+                styles.chip,
+                selectedSize === size && styles.chipSelected,
+              ]}
+            >
+              <Text style={selectedSize === size ? styles.chipTextSelected : styles.chipText}>
+                {size}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {selectedSize && (
+          <Text style={styles.selectedOptionText}>Selected Size: {selectedSize}</Text>
+        )}
+
+        {/* Customization */}
+        <Text style={styles.sectionTitle}>Customization</Text>
+        <View style={styles.optionContainer}>
+          {product.customizationOptions?.map((option, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => setSelectedCustomization(option)}
+              style={[
+                styles.chip,
+                selectedCustomization === option && styles.chipSelected,
+              ]}
+            >
+              <Text style={selectedCustomization === option ? styles.chipTextSelected : styles.chipText}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {selectedCustomization && (
+          <Text style={styles.selectedOptionText}>Selected Customization: {selectedCustomization}</Text>
+        )}
+      </ScrollView>
+
+      {/* Bottom Button */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity style={styles.customizeButton} onPress={handleGoToCustomize}>
+          <Text style={styles.customizeButtonText}>Go to Customize</Text>
+        </TouchableOpacity>
       </View>
-      <Text style={styles.selectedOptionText}>Selected Size: {selectedSize}</Text>
-
-      {/* Customization Options Section */}
-      <Text style={styles.sectionTitle}>Customization Options</Text>
-      <View style={styles.optionContainer}>
-        {product.customizationOptions?.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.customizationButton,
-              { backgroundColor: selectedCustomization === option ? '#aaaaaa' : '#ddd' }
-            ]}
-            onPress={() => setSelectedCustomization(option)}
-          >
-            <Text style={styles.customizationButtonText}>{option}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      <Text style={styles.selectedOptionText}>Selected Customization: {selectedCustomization}</Text>
-
-      {/* Button to go to CustomizeScreen */}
-      <TouchableOpacity
-        style={styles.customizeButton}
-        onPress={handleGoToCustomize}
-      >
-        <Text style={styles.customizeButtonText}>Go to Customize</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
+  header: {
+    flexDirection: 'row',
+    padding: 15,
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#fff',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  content: {
+    padding: 15,
   },
   productImage: {
     width: '100%',
     height: 250,
     resizeMode: 'contain',
-    marginBottom: 20,
-    borderRadius: 10,
+    marginBottom: 15,
   },
   productName: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 16,
-    color: '#333',
+    marginBottom: 5,
   },
   productPrice: {
-    fontSize: 20,
-    color: '#388e3c',
-    marginTop: 8,
+    fontSize: 18,
+    color: '#e91e63',
+    marginBottom: 10,
   },
   productDescription: {
-    fontSize: 16,
-    marginTop: 8,
-    color: 'gray',
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
-    marginTop: 24,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    marginTop: 20,
+    marginBottom: 10,
   },
   optionContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 8,
-    justifyContent: 'flex-start',
+    gap: 10,
+    marginBottom: 10,
   },
-  colorButton: {
-    width: 40,
-    height: 40,
+  colorCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+    borderColor: '#000',
+  },
+  chip: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
     borderRadius: 20,
-    margin: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ddd',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginRight: 10,
+    marginBottom: 10,
   },
-  checkMark: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: 'green',
+  chipSelected: {
+    backgroundColor: '#000',
   },
-  sizeButton: {
-    width: 80,
-    height: 40,
-    borderRadius: 8,
-    margin: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ddd',
+  chipText: {
+    color: '#000',
   },
-  sizeButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  customizationButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    margin: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ddd',
-  },
-  customizationButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+  chipTextSelected: {
+    color: '#fff',
   },
   selectedOptionText: {
-    fontSize: 16,
-    marginTop: 8,
-    color: 'gray',
+    fontSize: 14,
+    color: '#444',
+    marginBottom: 10,
+  },
+  bottomBar: {
+    padding: 15,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderColor: '#eee',
   },
   customizeButton: {
-    backgroundColor: '#388e3c',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    marginTop: 20,
+    backgroundColor: '#e91e63',
+    padding: 14,
+    borderRadius: 10,
     alignItems: 'center',
   },
   customizeButtonText: {
     color: '#fff',
-    fontSize: 18,
     fontWeight: 'bold',
   },
 });
 
-export default ProductDetailsScreen;
+export default ProductDetails;
