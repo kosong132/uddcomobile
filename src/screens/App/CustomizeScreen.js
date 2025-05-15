@@ -1,24 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, SafeAreaView, Modal } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker'; // Non-expo image picker
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'; // Material icons
-
+const API_URL = 'http://10.0.2.2:8080/orders';
+import axios from 'axios'; // Ensure Axios is installed
 const CustomizeScreen = ({ route, navigation }) => {
-    const { productId, productName, selectedColor, price, selectedSize } = route.params;
+    const { product, selectedColor, selectedSize, selectedCustomization } = route.params;
+    const productName = product?.name || 'Not available';
+    const productDescription = product?.description || 'No description provided';
+    const parsedPrice = parseFloat(product?.price);
+    const pricePerUnit = !isNaN(parsedPrice) ? parsedPrice.toFixed(2) : 'N/A';
+    
 
-
-    const [customizationOption, setCustomizationOption] = useState('');
+    const totalPrice = pricePerUnit * quantity;
     const [customImage, setCustomImage] = useState(null);
     const [logoPosition, setLogoPosition] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [isPositionModalVisible, setIsPositionModalVisible] = useState(false);
 
-    const customizationOptions = [
-        { id: 'dtg', name: 'DTG Printing', description: 'Direct-to-Garment printing for vibrant, detailed designs' },
-        { id: 'screen', name: 'Screen Printing', description: 'Durable prints ideal for simple designs and bulk orders' },
-        { id: 'hot', name: 'Hot Press Printing', description: 'Heat transfer printing for shiny, glossy finishes' },
-        { id: 'embroidery', name: 'Embroidery', description: 'Thread stitched designs for a premium, textured finish' },
-    ];
+
+
 
     const logoPositions = [
         { id: 'left_breast', name: 'Left Breast', image: require('../../assets/left-breast.png') },
@@ -48,29 +50,70 @@ const CustomizeScreen = ({ route, navigation }) => {
             }
         );
     };
+    const uploadImageToServer = async () => {
+        if (!customImage) return;
 
-    const handlePlaceOrder = () => {
-        if (!customizationOption) {
-            Alert.alert('Required', 'Please select a customization option');
+        const fileName = customImage.split('/').pop();
+        const fileType = fileName.split('.').pop(); // e.g., 'jpg' or 'png'
+
+        const data = new FormData();
+        data.append('file', {
+            uri: customImage,
+            type: `image/${fileType}`,
+            name: fileName,
+        });
+
+        try {
+            const res = await axios.post(`${API_URL}/upload-image`, data, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return res.data.url; // or res.data.url depending on backend // return res.data?.url;
+
+        } catch (error) {
+            console.error('Upload failed:', error.response?.data || error.message);
+            Alert.alert('Upload Error', 'Failed to upload image. Check server logs.');
+            return null;
+        }
+    };
+
+    const handlePlaceOrder = async () => {
+        if (!selectedCustomization || !customImage || !logoPosition) {
+            Alert.alert('Required', 'Please complete all required fields');
             return;
         }
 
-        if (!customImage) {
-            Alert.alert('Required', 'Please upload a customized image');
-            return;
-        }
+        const uploadedImageUrl = await uploadImageToServer();
+        if (!uploadedImageUrl) return;
 
-        if (!logoPosition) {
-            Alert.alert('Required', 'Please select a logo position');
-            return;
-        }
+        const order = {
+            productId: product.id,
+            productName,
+            selectedColor,
+            selectedSize,
+            selectedCustomization,
+            pricePerUnit: pricePerUnit,
+            totalPrice: totalPrice,
+            quantity,
+            logoPosition,
+            imageUrl: uploadedImageUrl,
+        };
+        console.log('Placing order with data:', order);
 
-        // Here you would typically send the order to your backend
-        Alert.alert(
-            'Order Placed Successfully!',
-            'Your customized order has been placed. We will process it soon.',
-            [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
-        );
+        try {
+            await axios.post(`${API_URL}/place-order`, order);
+            Alert.alert('Success', 'Order placed successfully', [
+                { text: 'OK', onPress: () => navigation.navigate('Home') },
+            ]);
+        } catch (error) {
+            Alert.alert('Error', 'Failed to place order');
+        }
+    };
+
+    const handleAddToWishlist = () => {
+        // TODO: Connect to backend or local storage
+        Alert.alert('Wishlist', 'Added to your favorites!');
     };
 
     const incrementQuantity = () => {
@@ -81,6 +124,11 @@ const CustomizeScreen = ({ route, navigation }) => {
         if (quantity > 1) {
             setQuantity(quantity - 1);
         }
+    };
+    const calculateTotalPrice = () => {
+        const qty = parseInt(quantity) || 0;
+        const unitPrice = parseFloat(product?.price) || 0;
+        return (unitPrice * qty).toFixed(2);
     };
 
     const renderPositionModal = () => {
@@ -142,47 +190,44 @@ const CustomizeScreen = ({ route, navigation }) => {
                     {/* Product Preview */}
                     <View style={styles.productPreview}>
                         <Image
-                            source={require('../../assets/logo.png')}
+                            source={{ uri: product?.imageUrl }}
                             style={styles.productPreviewImage}
+                            resizeMode="contain" // optional: keeps image aspect ratio
                         />
+
                         <TouchableOpacity style={styles.arButton}>
                             <MaterialIcons name="camera-alt" size={24} color="#fff" />
                             <Text style={styles.arButtonText}>AR Sizing</Text>
+
                         </TouchableOpacity>
                     </View>
-
                     <View style={styles.productDetailsPreview}>
-                        <Text style={styles.productNamePreview}>Product Name: {productName}</Text>
-                        <Text style={styles.fabricPreview}>Fabric: 100% Premium Cotton</Text>
-                        <Text style={styles.pricePreview}>Price per piece: RM {price.toFixed(2)}</Text>
-                        <Text style={styles.colorPreview}>Color Selected: {selectedColor}</Text>
-                        <Text style={styles.sizePreview}>Size Selected: {selectedSize || 'Not selected'}</Text>;
+                        <Text style={styles.productNamePreview}>
+                            Product Name: {productName}
+                        </Text>
 
+                        <Text style={styles.fabricPreview}>
+                            Description: {productDescription}
+                        </Text>
+
+                        <Text style={styles.pricePreview}>
+                            Price per piece: RM {pricePerUnit}
+                        </Text>
+
+                        <Text style={styles.colorPreview}>
+                            Color: {selectedColor || 'Not selected'} | Size: {selectedSize || 'Not selected'}
+                        </Text>
+
+                        <Text style={styles.printPreview}>
+                            Printing Method: {selectedCustomization || 'Not selected'}
+                        </Text>
                     </View>
+
+
                 </View>
 
                 <View style={styles.customizationContainer}>
-                    <Text style={styles.sectionTitle}>Select Customized Option:</Text>
 
-                    {/* Customization Options */}
-                    {customizationOptions.map((option) => (
-                        <TouchableOpacity
-                            key={option.id}
-                            style={[
-                                styles.customizationOption,
-                                customizationOption === option.id && styles.selectedCustomizationOption
-                            ]}
-                            onPress={() => setCustomizationOption(option.id)}
-                        >
-                            <View style={styles.optionTextContainer}>
-                                <Text style={styles.optionName}>{option.name}</Text>
-                                <Text style={styles.optionDescription}>{option.description}</Text>
-                            </View>
-                            {customizationOption === option.id && (
-                                <MaterialIcons name="check-circle" size={24} color="#FF6B00" />
-                            )}
-                        </TouchableOpacity>
-                    ))}
 
                     {/* Upload Image Section */}
                     <Text style={styles.sectionTitle}>Upload Customized Icon/Picture:</Text>
@@ -235,10 +280,16 @@ const CustomizeScreen = ({ route, navigation }) => {
 
                     {/* Order Buttons */}
                     <View style={styles.orderButtonsContainer}>
+                        <Text style={{ fontSize: 16, marginBottom: 10 }}>
+                            Total Price: RM {calculateTotalPrice()}
+                        </Text>
+
+
+
                         <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder}>
                             <Text style={styles.placeOrderText}>Place Order</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.favoriteButton}>
+                        <TouchableOpacity style={styles.favoriteButton} onPress={handleAddToWishlist}>
                             <MaterialIcons name="favorite-border" size={24} color="#FF6B00" />
                         </TouchableOpacity>
                     </View>
@@ -426,6 +477,13 @@ const styles = StyleSheet.create({
         marginTop: 32,
         marginBottom: 24,
     },
+    totalPriceText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginRight: 10,
+        color: '#333',
+    },
+
     placeOrderButton: {
         flex: 1,
         backgroundColor: '#FF6B00',

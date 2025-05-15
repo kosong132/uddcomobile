@@ -36,7 +36,7 @@ const ProductDetails = ({ navigation, route }) => {
     }
 
     navigation.navigate('Customize', {
-      product,
+      product: product, // Ensure this contains name, description, price, etc.
       selectedColor,
       selectedSize,
       selectedCustomization
