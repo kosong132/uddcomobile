@@ -57,7 +57,7 @@ const ProfileScreen = () => {
     { icon: '🔔', title: 'Notification', onPress: () => console.log('Notifications') },
     { icon: '📋', title: 'My Order', onPress: () => navigation.navigate('Order') },
     { icon: '💳', title: 'Payment', onPress: () => console.log('Payment') },
-    { icon: '🛒', title: 'Cart', onPress: () => console.log('Cart') },
+
     { icon: '❤️', title: 'Wish List', onPress: () => navigation.navigate('Wishlist') },
     { icon: '🔑', title: 'Password', onPress: () => console.log('Password') },
   ];

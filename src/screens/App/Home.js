@@ -9,7 +9,7 @@ const Home = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get('http://10.0.2.2:8080/products/all')
+ axios.get('http://10.0.2.2:8080/products/available') 
       .then(response => {
         setProducts(response.data);
       })

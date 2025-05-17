@@ -5,6 +5,9 @@ import { launchImageLibrary } from 'react-native-image-picker'; // Non-expo imag
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'; // Material icons
 const API_URL = 'http://10.0.2.2:8080/orders';
 import axios from 'axios'; // Ensure Axios is installed
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
 const CustomizeScreen = ({ route, navigation }) => {
     const { product, selectedColor, selectedSize, selectedCustomization } = route.params;
     const productName = product?.name || 'Not available';
@@ -18,7 +21,23 @@ const CustomizeScreen = ({ route, navigation }) => {
     const [logoPosition, setLogoPosition] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [isPositionModalVisible, setIsPositionModalVisible] = useState(false);
-
+    const [userId, setUserId] = useState(null);
+    useEffect(() => {
+        const fetchUserId = async () => {
+          try {
+            const userDataString = await AsyncStorage.getItem('userData'); // or 'user'
+            if (userDataString) {
+              const userData = JSON.parse(userDataString);
+              setUserId(userData.userId);
+            }
+          } catch (error) {
+            console.log('Error loading user ID:', error);
+          }
+        };
+      
+        fetchUserId();
+      }, []);
+      
 
 
 
@@ -98,6 +117,7 @@ const CustomizeScreen = ({ route, navigation }) => {
             quantity,
             logoPosition,
             imageUrl: uploadedImageUrl,
+            userId: userId,
         };
         console.log('Placing order with data:', order);
 
