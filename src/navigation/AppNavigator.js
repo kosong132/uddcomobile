@@ -15,6 +15,7 @@ import WishlistScreen from '../screens/App/Wishlist';
 import OrderScreen from '../screens/App/Order';
 import ProductDetailsScreen from '../screens/App/ProductDetailsScreen';
 import CustomizeScreen from '../screens/App/CustomizeScreen';
+import ARFittingScreen from '../screens/App/ARFittingScreen'; // Import ARFittingScreen
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -26,7 +27,7 @@ const AppNavigator = () => {
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-
+      <Stack.Screen name="ARFittingScreen" component={ARFittingScreen} />
       {/* Home and other screens after sign-in */}
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Order" component={OrderScreen} />

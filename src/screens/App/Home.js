@@ -9,7 +9,8 @@ const Home = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
- axios.get('http://10.0.2.2:8080/products/available') 
+ axios.get('http://10.211.104.123:8080/products/available') 
+  // axios.get('http://10.0.2.2:8080/products/available') 
       .then(response => {
         setProducts(response.data);
       })
@@ -126,34 +127,3 @@ const styles = StyleSheet.create({
 });
 
 export default Home;
-
-// const products = [
-//   {
-//     id: '1',
-//     name: 'Urban Artistry Tee',
-//     description: '100% Premium Cotton',
-//     price: 'RM 24.99',
-//     image: require('../../assets/urban-tee.png'),
-//   },
-//   {
-//     id: '2',
-//     name: 'Collar T',
-//     description: 'Cotton-Polyester Blend',
-//     price: 'RM 39.00',
-//     image: require('../../assets/collar-t.png'),
-//   },
-//   {
-//     id: '3',
-//     name: 'Pro Hoops Jersey',
-//     description: 'Performance Polyester',
-//     price: 'RM 69.00',
-//     image: require('../../assets/hoops-jersey.png'),
-//   },
-//   {
-//     id: '4',
-//     name: 'Basketball Jersey Set',
-//     description: 'Lightweight Mesh Polyester',
-//     price: 'RM 79.00',
-//     image: require('../../assets/basketball-set.png'),
-//   },
-// ];

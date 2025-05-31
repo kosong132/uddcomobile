@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, SafeAreaView, Modal } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker'; // Non-expo image picker
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'; // Material icons
-const API_URL = 'http://10.0.2.2:8080/orders';
+// const API_URL = 'http://10.0.2.2:8080/orders';
+const API_URL = 'http://10.211.104.123:8080/orders';
 import axios from 'axios'; // Ensure Axios is installed
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -14,7 +15,7 @@ const CustomizeScreen = ({ route, navigation }) => {
     const productDescription = product?.description || 'No description provided';
     const parsedPrice = parseFloat(product?.price);
     const pricePerUnit = !isNaN(parsedPrice) ? parsedPrice.toFixed(2) : 'N/A';
-    
+
 
     const totalPrice = pricePerUnit * quantity;
     const [customImage, setCustomImage] = useState(null);
@@ -24,20 +25,20 @@ const CustomizeScreen = ({ route, navigation }) => {
     const [userId, setUserId] = useState(null);
     useEffect(() => {
         const fetchUserId = async () => {
-          try {
-            const userDataString = await AsyncStorage.getItem('userData'); // or 'user'
-            if (userDataString) {
-              const userData = JSON.parse(userDataString);
-              setUserId(userData.userId);
+            try {
+                const userDataString = await AsyncStorage.getItem('userData'); // or 'user'
+                if (userDataString) {
+                    const userData = JSON.parse(userDataString);
+                    setUserId(userData.userId);
+                }
+            } catch (error) {
+                console.log('Error loading user ID:', error);
             }
-          } catch (error) {
-            console.log('Error loading user ID:', error);
-          }
         };
-      
+
         fetchUserId();
-      }, []);
-      
+    }, []);
+
 
 
 
@@ -215,11 +216,25 @@ const CustomizeScreen = ({ route, navigation }) => {
                             resizeMode="contain" // optional: keeps image aspect ratio
                         />
 
-                        <TouchableOpacity style={styles.arButton}>
+                        <TouchableOpacity
+                            style={styles.arButton}
+                            onPress={() => {
+                                if (!product.modelUrl) {
+                                    Alert.alert('AR Model Missing', '3D model is not available for this product.');
+                                    return;
+                                }
+                                navigation.navigate('ARFittingScreen', {
+                                    productId: product.id,
+                                    modelUrl: product.modelUrl,
+                                    productName: product.name,
+                                });
+                            }}
+                        >
                             <MaterialIcons name="camera-alt" size={24} color="#fff" />
                             <Text style={styles.arButtonText}>AR Sizing</Text>
-
                         </TouchableOpacity>
+
+
                     </View>
                     <View style={styles.productDetailsPreview}>
                         <Text style={styles.productNamePreview}>
