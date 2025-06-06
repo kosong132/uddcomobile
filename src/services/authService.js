@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 // const API_URL = 'http://10.0.2.2:8080/auth'; // 10.0.2.2 = localhost on Android emulator
-const API_URL = 'http://10.211.104.123:8080/auth';
+const API_URL = 'http://10.211.97.163:8080/auth';
+// const API_URL = 'http://192.168.58.154:8080/auth';
+// 192.168.58.154
 export const signIn = (username, password) => {
   return axios.post(`${API_URL}/login`, { username, password });
 };

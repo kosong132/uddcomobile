@@ -4,29 +4,30 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Saf
 import { launchImageLibrary } from 'react-native-image-picker'; // Non-expo image picker
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'; // Material icons
 // const API_URL = 'http://10.0.2.2:8080/orders';
-const API_URL = 'http://10.211.104.123:8080/orders';
+// const API_URL = 'http://192.168.58.154:8080/orders';
+ const API_URL = 'http://10.211.97.163:8080';
 import axios from 'axios'; // Ensure Axios is installed
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
 const CustomizeScreen = ({ route, navigation }) => {
     const { product, selectedColor, selectedSize, selectedCustomization } = route.params;
+
+    // Use fallback strings but parse price as number
     const productName = product?.name || 'Not available';
     const productDescription = product?.description || 'No description provided';
     const parsedPrice = parseFloat(product?.price);
-    const pricePerUnit = !isNaN(parsedPrice) ? parsedPrice.toFixed(2) : 'N/A';
+    const pricePerUnit = !isNaN(parsedPrice) ? parsedPrice : 0; // Keep number for calculations
 
-
-    const totalPrice = pricePerUnit * quantity;
     const [customImage, setCustomImage] = useState(null);
     const [logoPosition, setLogoPosition] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [isPositionModalVisible, setIsPositionModalVisible] = useState(false);
     const [userId, setUserId] = useState(null);
+
     useEffect(() => {
         const fetchUserId = async () => {
             try {
-                const userDataString = await AsyncStorage.getItem('userData'); // or 'user'
+                const userDataString = await AsyncStorage.getItem('userData');
                 if (userDataString) {
                     const userData = JSON.parse(userDataString);
                     setUserId(userData.userId);
@@ -38,9 +39,6 @@ const CustomizeScreen = ({ route, navigation }) => {
 
         fetchUserId();
     }, []);
-
-
-
 
     const logoPositions = [
         { id: 'left_breast', name: 'Left Breast', image: require('../../assets/left-breast.png') },
@@ -70,11 +68,12 @@ const CustomizeScreen = ({ route, navigation }) => {
             }
         );
     };
+
     const uploadImageToServer = async () => {
-        if (!customImage) return;
+        if (!customImage) return null;
 
         const fileName = customImage.split('/').pop();
-        const fileType = fileName.split('.').pop(); // e.g., 'jpg' or 'png'
+        const fileType = fileName.split('.').pop();
 
         const data = new FormData();
         data.append('file', {
@@ -84,19 +83,26 @@ const CustomizeScreen = ({ route, navigation }) => {
         });
 
         try {
-            const res = await axios.post(`${API_URL}/upload-image`, data, {
+            const res = await axios.post(`${API_URL}/orders/upload-image`, data, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            return res.data.url; // or res.data.url depending on backend // return res.data?.url;
-
+            return res.data.url;
         } catch (error) {
             console.error('Upload failed:', error.response?.data || error.message);
             Alert.alert('Upload Error', 'Failed to upload image. Check server logs.');
             return null;
         }
     };
+
+    // Calculate total price based on quantity and unit price
+    const calculateTotalPrice = () => {
+        return (pricePerUnit * quantity).toFixed(2); // for display only (string)
+    };
+
+    // Use numeric total price for backend submission
+    const totalPrice = Number((pricePerUnit * quantity).toFixed(2));
 
     const handlePlaceOrder = async () => {
         if (!selectedCustomization || !customImage || !logoPosition) {
@@ -113,17 +119,17 @@ const CustomizeScreen = ({ route, navigation }) => {
             selectedColor,
             selectedSize,
             selectedCustomization,
-            pricePerUnit: pricePerUnit,
-            totalPrice: totalPrice,
+            pricePerUnit,
+            totalPrice,
             quantity,
             logoPosition,
             imageUrl: uploadedImageUrl,
-            userId: userId,
+            userId,
         };
         console.log('Placing order with data:', order);
 
         try {
-            await axios.post(`${API_URL}/place-order`, order);
+            await axios.post(`${API_URL}/orders/place-order`, order);
             Alert.alert('Success', 'Order placed successfully', [
                 { text: 'OK', onPress: () => navigation.navigate('Home') },
             ]);
@@ -132,9 +138,39 @@ const CustomizeScreen = ({ route, navigation }) => {
         }
     };
 
-    const handleAddToWishlist = () => {
-        // TODO: Connect to backend or local storage
-        Alert.alert('Wishlist', 'Added to your favorites!');
+    const handleAddToWishlist = async () => {
+        if (!selectedCustomization || !customImage || !logoPosition) {
+            Alert.alert('Required', 'Please complete all required fields');
+            return;
+        }
+
+        try {
+            const uploadedImageUrl = await uploadImageToServer();
+            if (!uploadedImageUrl) return;
+
+            const wishlistItem = {
+                productId: product.id,
+                productName,
+                selectedColor,
+                selectedSize,
+                selectedCustomization,
+                pricePerUnit,
+                totalPrice,
+                quantity,
+                logoPosition,
+                imageUrl: uploadedImageUrl,
+                userId,
+            };
+
+            console.log('Adding to wishlist with data:', wishlistItem);
+
+            await axios.post(`${API_URL}/wishlist/add-wishlist`, wishlistItem);
+
+            Alert.alert('Success', 'Item added to wishlist!');
+        } catch (error) {
+            console.error('Failed to add to wishlist:', error);
+            Alert.alert('Error', 'Failed to add item to wishlist');
+        }
     };
 
     const incrementQuantity = () => {
@@ -146,11 +182,7 @@ const CustomizeScreen = ({ route, navigation }) => {
             setQuantity(quantity - 1);
         }
     };
-    const calculateTotalPrice = () => {
-        const qty = parseInt(quantity) || 0;
-        const unitPrice = parseFloat(product?.price) || 0;
-        return (unitPrice * qty).toFixed(2);
-    };
+
 
     const renderPositionModal = () => {
         return (

@@ -3,7 +3,9 @@ import { View, Text, StyleSheet, Image, ActivityIndicator, Modal, Pressable, Tou
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-const API_URL = 'http://10.0.2.2:8080/orders';
+// const API_URL = 'http://10.0.2.2:8080/orders';
+// const API_URL = 'http://192.168.58.154/orders';
+const API_URL = 'http://10.211.97.163:8080'; // Update with your actual API URL
 import AppLayout from '../../layouts/AppLayout';
 
 const Tab = createMaterialTopTabNavigator();
@@ -146,13 +148,13 @@ const Order = () => {
     const fetchOrders = async () => {
       if (!userId) return;
       try {
-        const response = await axios.get(`http://10.0.2.2:8080/orders/user/${userId}`);
+        const response = await axios.get(`${API_URL}/orders/user/${userId}`);
         const fetchedOrders = response.data;
 
         const ordersWithProductImage = await Promise.all(
           fetchedOrders.map(async (order) => {
             try {
-              const productRes = await axios.get(`http://10.0.2.2:8080/products/${order.productId}`);
+              const productRes = await axios.get(`${API_URL}/products/${order.productId}`);
               return {
                 ...order,
                 productImageUrl: productRes.data.imageUrl || null,

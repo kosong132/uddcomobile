@@ -1,6 +1,6 @@
 // src/screens/Auth/SignInScreen.js
 import React, { useState } from 'react';
-import { View,TextInput, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
 import AuthLayout from '../../layouts/AuthLayout';
 import { signIn } from '../../services/authService';
 import styles from './styles';
@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SignInScreen = ({ navigation }) => {
   // const [email, setEmail] = useState('');
-  const [username, setUsername]= useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSignIn = async () => {
@@ -23,7 +23,7 @@ const SignInScreen = ({ navigation }) => {
     try {
       const response = await signIn(username, password);
       const userData = response.data;
-
+      console.log('Login userData:', userData);
       // Save user info in AsyncStorage
       await AsyncStorage.setItem('userData', JSON.stringify(userData));
 
@@ -34,8 +34,8 @@ const SignInScreen = ({ navigation }) => {
       Alert.alert('Login failed', error.response?.data || 'Invalid credentials');
     }
   };
-  
-  
+
+
   return (
     <AuthLayout title="Sign In" subtitle="Welcome back">
       <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={styles.input} />
