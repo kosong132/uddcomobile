@@ -29,6 +29,9 @@ const ForgotPasswordScreen = ({ navigation }) => {
         value={email}
         onChangeText={setEmail}
         style={styles.input}
+         placeholderTextColor="#999"
+        autoCapitalize="none"
+        autoCorrect={false}
       />
       <TouchableOpacity style={styles.button} onPress={handleForgot}>
         <Text style={styles.buttonText}>Send OTP</Text>

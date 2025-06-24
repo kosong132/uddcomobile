@@ -54,10 +54,8 @@ const ProfileScreen = () => {
   };
 
   const menuItems = [
-    { icon: '🔔', title: 'Notification', onPress: () => console.log('Notifications') },
+    { icon: '👤', title: 'My Profile', onPress: () => navigation.navigate('MyProfile') },
     { icon: '📋', title: 'My Order', onPress: () => navigation.navigate('Order') },
-    { icon: '💳', title: 'Payment', onPress: () => console.log('Payment') },
-
     { icon: '❤️', title: 'Wish List', onPress: () => navigation.navigate('Wishlist') },
     { icon: '🔑', title: 'Password', onPress: () => console.log('Password') },
   ];

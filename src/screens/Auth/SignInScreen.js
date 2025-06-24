@@ -38,8 +38,12 @@ const SignInScreen = ({ navigation }) => {
 
   return (
     <AuthLayout title="Sign In" subtitle="Welcome back">
-      <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={styles.input} />
-      <TextInput placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} style={styles.input} />
+      <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={styles.input} placeholderTextColor="#999"
+        autoCapitalize="none"
+        autoCorrect={false} />
+      <TextInput placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} style={styles.input}  placeholderTextColor="#999"
+        autoCapitalize="none"
+        autoCorrect={false}/>
 
       <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
         <Text style={styles.forgot}>Forgot Password?</Text>

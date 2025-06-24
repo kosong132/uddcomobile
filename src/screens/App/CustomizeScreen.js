@@ -3,9 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, SafeAreaView, Modal } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker'; // Non-expo image picker
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'; // Material icons
-// const API_URL = 'http://10.0.2.2:8080/orders';
-// const API_URL = 'http://192.168.58.154:8080/orders';
- const API_URL = 'http://10.211.97.163:8080';
+ const API_URL = 'https://uddco.onrender.com';
 import axios from 'axios'; // Ensure Axios is installed
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -255,7 +253,7 @@ const CustomizeScreen = ({ route, navigation }) => {
                                     Alert.alert('AR Model Missing', '3D model is not available for this product.');
                                     return;
                                 }
-                                navigation.navigate('ARFittingScreen', {
+                                navigation.navigate('ProfessionalClothingShowroom', {
                                     productId: product.id,
                                     modelUrl: product.modelUrl,
                                     productName: product.name,

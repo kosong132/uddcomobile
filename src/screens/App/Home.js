@@ -7,7 +7,7 @@ import axios from 'axios';
 const Home = ({ navigation }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-const API_URL = 'http://10.211.97.163:8080/products'; // Update with your API URL
+const API_URL = 'https://uddco.onrender.com/products'; // Update with your API URL
   useEffect(() => {
  axios.get(`${API_URL}/available`) 
 // axios.get('http://192.168.58.154:8080/products/available') 

@@ -1,420 +1,729 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AR Camera + 3D Model</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>AR Virtual Try-On</title>
   <style>
-    html,
     body {
       margin: 0;
-      padding: 0;
       overflow: hidden;
-      background: #000;
+      background-color: #000;
+      font-family: Arial, sans-serif;
     }
 
-    #three-canvas {
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #video-background {
       position: absolute;
       top: 0;
       left: 0;
-      z-index: 2;
-    }
-
-    video {
-      position: absolute;
-      top: 0;
-      left: 0;
-      object-fit: cover;
       width: 100%;
       height: 100%;
+      object-fit: cover;
       z-index: 1;
+      transform: scaleX(-1); /* Mirror the video for natural selfie view */
     }
 
-    #load3dBtn {
+    #loading {
       position: absolute;
-      bottom: 20px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 18px;
+      text-align: center;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 30px;
+      border-radius: 15px;
+      min-width: 300px;
+    }
+
+    #progress-bar {
+      width: 100%;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      margin: 15px 0;
+      overflow: hidden;
+    }
+
+    #progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4CAF50, #45a049);
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 10px;
+    }
+
+    #progress-text {
+      font-size: 16px;
+      margin-top: 10px;
+      color: #fff;
+    }
+
+    #ar-button {
+      position: absolute;
+      bottom: 30px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 10px 20px;
-      font-size: 1.2rem;
-      background: #28a745;
+      padding: 15px 30px;
+      background: linear-gradient(45deg, #4CAF50, #45a049);
       color: white;
       border: none;
-      border-radius: 5px;
-      z-index: 3;
+      border-radius: 25px;
+      z-index: 100;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      display: none;
+    }
+
+    #ar-button:hover {
+      background: linear-gradient(45deg, #45a049, #4CAF50);
+      transform: translateX(-50%) translateY(-2px);
+      box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
     }
 
     #status {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      color: #fff;
-      font-weight: bold;
-      z-index: 3;
+      top: 20px;
+      left: 20px;
+      color: white;
+      font-size: 14px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px 15px;
+      border-radius: 20px;
+      z-index: 200;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .status-active { background: #4CAF50; }
+    .status-inactive { background: #f44336; }
+    .status-loading { background: #ff9800; animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    #debug-info {
+      position: absolute;
+      top: 70px;
+      left: 20px;
+      color: white;
+      font-size: 12px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 10px;
+      z-index: 200;
+      display: none;
     }
   </style>
 </head>
 
 <body>
+  <div id="container">
+    <video id="video-background" autoplay muted playsinline style="display: none;"></video>
+    
+    <div id="loading">
+      <div id="loading-text">Initializing AR Try-On...</div>
+      <div id="progress-bar">
+        <div id="progress-fill"></div>
+      </div>
+      <div id="progress-text">0%</div>
+    </div>
+    
+    <button id="ar-button">Start AR Experience</button>
+    
+    <div id="status" style="display: none;">
+      <span class="status-dot status-inactive"></span>
+      <span id="status-text">Ready</span>
+    </div>
 
-  <video id="camera" autoplay muted playsinline></video>
-  <canvas id="three-canvas"></canvas>
-  <div id="status">No model URL provided.</div>
-  <button id="load3dBtn" disabled>Load 3D</button>
+    <div id="debug-info">
+      <div>Torso X: <span id="debug-x">0</span></div>
+      <div>Torso Y: <span id="debug-y">0</span></div>
+      <div>Scale: <span id="debug-scale">0</span></div>
+      <div>Confidence: <span id="debug-conf">0</span></div>
+    </div>
+  </div>
 
-  <!-- three.js -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/loaders/GLTFLoader.js"></script>
-
-  <script>
-    const video = document.getElementById('camera');
-    const canvas = document.getElementById('three-canvas');
-    const statusDiv = document.getElementById('status');
-    const load3dBtn = document.getElementById('load3dBtn');
-  const originalLog = console.log;
-  console.log = function (...args) {
-    originalLog(...args); // still logs in browser console (optional)
-    window.ReactNativeWebView?.postMessage('[LOG] ' + args.join(' '));
-  };
-
-  const originalError = console.error;
-  console.error = function (...args) {
-    originalError(...args);
-    window.ReactNativeWebView?.postMessage('[ERROR] ' + args.join(' '));
-  };
-    let scene, camera3d, renderer, loader, model;
-    let modelUrl = null;
-
-    // 1. Open camera
-    async function openCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-        video.srcObject = stream;
-      } catch (err) {
-        alert('Failed to access camera: ' + err.message);
-      }
-    }
-
-    // 2. Initialize Three.js scene
-    function initThree() {
-      scene = new THREE.Scene();
-
-      const fov = 60;
-      const aspect = window.innerWidth / window.innerHeight;
-      camera3d = new THREE.PerspectiveCamera(fov, aspect, 0.1, 1000);
-      camera3d.position.set(0, 0, 2);
-
-      renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(window.devicePixelRatio);
-
-      const light = new THREE.DirectionalLight(0xffffff, 1);
-      light.position.set(0, 5, 5);
-      scene.add(light);
-
-      const ambient = new THREE.AmbientLight(0x404040, 2);
-      scene.add(ambient);
-
-      loader = new THREE.GLTFLoader();
-    }
-
-    // 3. Animate the scene
-    function animate() {
-      requestAnimationFrame(animate);
-      if (model) model.rotation.y += 0.01;
-      renderer.render(scene, camera3d);
-    }
-
-    // 4. React Native calls this
-    window.setModelUrl = function (url) {
-      modelUrl = url;
-      if (modelUrl) {
-        statusDiv.textContent = "Model URL set.";
-        statusDiv.style.color = "#8f8";
-        load3dBtn.disabled = false;
-      } else {
-        statusDiv.textContent = "No model URL provided.";
-        statusDiv.style.color = "#f66";
-        load3dBtn.disabled = true;
-      }
-    };
-
-    // 5. Load 3D model
-    load3dBtn.addEventListener('click', () => {
-      if (!modelUrl) return alert("Model URL is not set.");
-
-      if (!scene) initThree();
-
-      statusDiv.textContent = "Loading model...";
-      statusDiv.style.color = "#ff8";
-
-loader.load(
-  modelUrl,
-  (gltf) => {
-    console.log('[Model Loaded]', gltf);
-    model = gltf.scene;
-    model.scale.set(1, 1, 1);
-    scene.add(model);
-    animate();
-    window.ReactNativeWebView?.postMessage("Model loaded successfully");
-    statusDiv.textContent = "Model loaded!";
-    statusDiv.style.color = "#8f8";
-  },
-  (xhr) => {
-    console.log(`[Loading Progress] ${(xhr.loaded / xhr.total) * 100}%`);
-  },
-  (error) => {
-    console.error('[Model Load Error]', error);
-    statusDiv.textContent = "Load failed: " + error.message;
-    statusDiv.style.color = "#f66";
-    window.ReactNativeWebView?.postMessage("Model load error: " + error.message);
-  }
-);
-
-
-    });
-
-    openCamera();
-  </script>
-</body>
-
-</html>
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AR Camera + 3D Model</title>
-  <style>
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: #000;
-    }
-
-    #three-canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 2;
-    }
-
-    video {
-      position: absolute;
-      top: 0;
-      left: 0;
-      object-fit: cover;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
-
-    #load3dBtn {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 10px 20px;
-      font-size: 1.2rem;
-      background: #28a745;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      z-index: 3;
-    }
-
-    #status {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      color: #fff;
-      font-weight: bold;
-      z-index: 3;
-    }
-  </style>
-</head>
-
-<body>
-
-  <video id="camera" autoplay muted playsinline></video>
-  <canvas id="three-canvas"></canvas>
-  <div id="status">Initializing...</div>
-  <button id="load3dBtn" disabled>Load 3D</button>
-
-// three.js 
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/3.18.0/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.0.5/dist/body-pix.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet@2.2.2/dist/posenet.min.js"></script>
 
   <script>
-    const video = document.getElementById('camera');
-    const canvas = document.getElementById('three-canvas');
-    const statusDiv = document.getElementById('status');
-    const load3dBtn = document.getElementById('load3dBtn');
-
-    // Override console.log/error to send messages to ReactNative WebView if present
-    const originalLog = console.log;
-    console.log = function (...args) {
-      originalLog(...args);
-      window.ReactNativeWebView?.postMessage('[LOG] ' + args.join(' '));
+    // Global variables
+    let camera, scene, renderer, clothingModel, bodyPixNet, poseNet;
+    let videoElement, isVideoReady = false;
+    let isBodyPixLoaded = false, isPoseNetLoaded = false, isModelLoaded = false;
+    let animationId, lastTrackingTime = 0;
+    let bodyTracking = { 
+      torsoX: 0, 
+      torsoY: 0, 
+      shoulderWidth: 0, 
+      torsoHeight: 0, 
+      scale: 1, 
+      confidence: 0,
+      rotation: 0 
     };
+    let smoothingFactor = 0.3;
+    let debugMode = false;
 
-    const originalError = console.error;
-    console.error = function (...args) {
-      originalError(...args);
-      window.ReactNativeWebView?.postMessage('[ERROR] ' + args.join(' '));
-    };
+    // Progress tracking
+    let totalSteps = 5;
+    let currentStep = 0;
+    let loadingSteps = [
+      'Initializing 3D Scene...',
+      'Loading Body Detection AI...',
+      'Loading Pose Detection AI...',
+      'Setting up Camera...',
+      'Ready to Start!'
+    ];
 
-    let scene, camera3d, renderer, loader, model;
-    let modelUrl = null;
+    // Update progress
+    function updateProgress(step, message) {
+      currentStep = step;
+      const percentage = Math.round((step / totalSteps) * 100);
+      
+      document.getElementById('loading-text').textContent = message;
+      document.getElementById('progress-fill').style.width = percentage + '%';
+      document.getElementById('progress-text').textContent = percentage + '%';
+      
+      console.log(`Progress: ${percentage}% - ${message}`);
+    }
 
-    // 1. Open camera
-    async function openCamera() {
+    // Update status indicator
+    function updateStatus(text, active = false, loading = false) {
+      const statusElement = document.getElementById('status');
+      const dotElement = statusElement.querySelector('.status-dot');
+      const textElement = document.getElementById('status-text');
+      
+      textElement.textContent = text;
+      dotElement.className = 'status-dot ' + (loading ? 'status-loading' : (active ? 'status-active' : 'status-inactive'));
+      statusElement.style.display = 'block';
+    }
+
+    // Update debug info
+    function updateDebugInfo() {
+      if (!debugMode) return;
+      
+      document.getElementById('debug-x').textContent = bodyTracking.torsoX.toFixed(2);
+      document.getElementById('debug-y').textContent = bodyTracking.torsoY.toFixed(2);
+      document.getElementById('debug-scale').textContent = bodyTracking.scale.toFixed(2);
+      document.getElementById('debug-conf').textContent = (bodyTracking.confidence * 100).toFixed(0) + '%';
+    }
+
+    // Initialize the AR system
+    async function init() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-        video.srcObject = stream;
-        statusDiv.textContent = 'Camera started.';
-        statusDiv.style.color = '#8f8';
-      } catch (err) {
-        alert('Failed to access camera: ' + err.message);
-        statusDiv.textContent = 'Camera access failed.';
-        statusDiv.style.color = '#f66';
-      }
-    }
-
-    // 2. Initialize Three.js scene
-    function initThree() {
-      scene = new THREE.Scene();
-
-      const fov = 60;
-      const aspect = window.innerWidth / window.innerHeight;
-      camera3d = new THREE.PerspectiveCamera(fov, aspect, 0.1, 1000);
-      camera3d.position.set(0, 0, 2);
-
-      renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(window.devicePixelRatio);
-
-      const light = new THREE.DirectionalLight(0xffffff, 1);
-      light.position.set(0, 5, 5);
-      scene.add(light);
-
-      const ambient = new THREE.AmbientLight(0x404040, 2);
-      scene.add(ambient);
-
-      loader = new THREE.GLTFLoader();
-    }
-
-    // 3. Animate the scene
-    function animate() {
-      requestAnimationFrame(animate);
-      if (model) model.rotation.y += 0.01;
-      renderer.render(scene, camera3d);
-    }
-
-    // 4. Set model URL and enable button
-    window.setModelUrl = function (url) {
-      modelUrl = url;
-      if (modelUrl) {
-        statusDiv.textContent = "Model URL set.";
-        statusDiv.style.color = "#8f8";
-        load3dBtn.disabled = false;
-      } else {
-        statusDiv.textContent = "No model URL provided.";
-        statusDiv.style.color = "#f66";
-        load3dBtn.disabled = true;
-      }
-    };
-
-    // 5. Load 3D model button click
-    load3dBtn.addEventListener('click', () => {
-      if (!modelUrl) return alert("Model URL is not set.");
-
-      if (!scene) initThree();
-
-      statusDiv.textContent = "Loading model...";
-      statusDiv.style.color = "#ff8";
-
-      loader.load(
-        modelUrl,
-        (gltf) => {
-          console.log('[Model Loaded]', gltf);
-          if (model) scene.remove(model);
-          model = gltf.scene;
-          model.scale.set(1, 1, 1);
-          scene.add(model);
-          animate();
-          window.ReactNativeWebView?.postMessage("Model loaded successfully");
-          statusDiv.textContent = "Model loaded!";
-          statusDiv.style.color = "#8f8";
-        },
-        (xhr) => {
-          const percent = xhr.total ? (xhr.loaded / xhr.total) * 100 : 0;
-          console.log(`[Loading Progress] ${percent.toFixed(2)}%`);
-          statusDiv.textContent = `Loading model... ${percent.toFixed(2)}%`;
-        },
-        (error) => {
-          console.error('[Model Load Error]', error);
-          statusDiv.textContent = "Load failed: " + error.message;
-          statusDiv.style.color = "#f66";
-          window.ReactNativeWebView?.postMessage("Model load error: " + error.message);
+        updateProgress(1, loadingSteps[0]);
+        await createScene();
+        
+        updateProgress(2, loadingSteps[1]);
+        await loadBodyDetection();
+        
+        updateProgress(3, loadingSteps[2]);
+        await loadPoseDetection();
+        
+        updateProgress(4, loadingSteps[3]);
+        await setupCamera();
+        
+        updateProgress(5, loadingSteps[4]);
+        
+        // Show start button
+        document.getElementById('ar-button').style.display = 'block';
+        document.getElementById('ar-button').addEventListener('click', startAR);
+        
+        // Enable debug mode (double-tap to toggle)
+        let tapCount = 0;
+        document.addEventListener('click', () => {
+          tapCount++;
+          setTimeout(() => {
+            if (tapCount === 2) {
+              debugMode = !debugMode;
+              document.getElementById('debug-info').style.display = debugMode ? 'block' : 'none';
+            }
+            tapCount = 0;
+          }, 300);
+        });
+        
+        // Notify React Native
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'INIT_COMPLETE',
+            message: 'AR system ready'
+          }));
         }
-      );
-    });
-
-    // Utility to get URL query param
-    function getQueryParam(name) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(name);
+        
+      } catch (error) {
+        console.error('Initialization failed:', error);
+        updateProgress(0, `Error: ${error.message}`);
+        document.getElementById('progress-fill').style.background = '#f44336';
+      }
     }
 
-    // Fetch product info and set model URL
-    async function fetchModelUrl(productId) {
-      if (!productId) {
-        statusDiv.textContent = "No productId specified in URL.";
-        statusDiv.style.color = "#f66";
+    // Create 3D scene
+    async function createScene() {
+      scene = new THREE.Scene();
+      
+      // Setup camera
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 0, 2);
+      
+      // Setup renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x000000, 0);
+      document.getElementById('container').appendChild(renderer.domElement);
+      
+      // Add lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(1, 1, 1);
+      scene.add(directionalLight);
+      
+      // Handle window resize
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+
+    // Load body detection model
+    async function loadBodyDetection() {
+      try {
+        bodyPixNet = await bodyPix.load({
+          architecture: 'MobileNetV1',
+          outputStride: 16,
+          multiplier: 0.75,
+          quantBytes: 2
+        });
+        isBodyPixLoaded = true;
+      } catch (error) {
+        throw new Error('Failed to load body detection: ' + error.message);
+      }
+    }
+
+    // Load pose detection model
+    async function loadPoseDetection() {
+      try {
+        poseNet = await posenet.load({
+          architecture: 'MobileNetV1',
+          outputStride: 16,
+          inputResolution: { width: 320, height: 240 },
+          multiplier: 0.75
+        });
+        isPoseNetLoaded = true;
+      } catch (error) {
+        console.warn('PoseNet failed to load, using fallback method:', error);
+        isPoseNetLoaded = false; // We can work without PoseNet
+      }
+    }
+
+    // Setup camera
+    async function setupCamera() {
+      try {
+        videoElement = document.getElementById('video-background');
+        
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user'
+          }
+        });
+        
+        videoElement.srcObject = stream;
+        
+        return new Promise((resolve, reject) => {
+          videoElement.onloadedmetadata = () => {
+            videoElement.play().then(() => {
+              isVideoReady = true;
+              resolve();
+            }).catch(reject);
+          };
+          videoElement.onerror = reject;
+        });
+        
+      } catch (error) {
+        throw new Error('Camera access denied: ' + error.message);
+      }
+    }
+
+    // Load 3D clothing model
+    async function loadClothingModel(modelUrl) {
+      if (!modelUrl) return;
+      
+      try {
+        updateStatus('Loading 3D Model...', false, true);
+        
+        const loader = new THREE.GLTFLoader();
+        const gltf = await new Promise((resolve, reject) => {
+          loader.load(
+            modelUrl,
+            resolve,
+            (progress) => {
+              console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
+            },
+            reject
+          );
+        });
+        
+        // Remove existing model
+        if (clothingModel) {
+          scene.remove(clothingModel);
+        }
+        
+        clothingModel = gltf.scene;
+        
+        // Configure model for clothing
+        clothingModel.scale.set(1, 1, 1);
+        clothingModel.position.set(0, 0, 0);
+        
+        clothingModel.traverse((child) => {
+          if (child.isMesh) {
+            child.material.transparent = true;
+            child.material.opacity = 0.85;
+            child.material.side = THREE.DoubleSide;
+            // Improve clothing material properties
+            if (child.material.map) {
+              child.material.map.flipY = false;
+            }
+          }
+        });
+        
+        scene.add(clothingModel);
+        isModelLoaded = true;
+        
+        updateStatus('Model Loaded - Tracking Torso', true);
+        console.log('3D clothing model loaded successfully');
+        
+      } catch (error) {
+        console.error('Model loading failed:', error);
+        updateStatus('Model Load Failed', false);
+      }
+    }
+
+    // Start AR experience
+    function startAR() {
+      if (!isBodyPixLoaded || !isVideoReady) {
+        updateStatus('System not ready', false);
         return;
       }
-      statusDiv.textContent = `Fetching model URL for product ID: ${productId}...`;
-      statusDiv.style.color = "#ff8";
-
-      try {
-        const response = await fetch(`http://localhost:8080/products/${productId}`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const product = await response.json();
-        if (product.modelUrl) {
-          window.setModelUrl(product.modelUrl);
-        } else {
-          statusDiv.textContent = "Model URL not found in product data.";
-          statusDiv.style.color = "#f66";
-        }
-      } catch (err) {
-        console.error('Fetch error:', err);
-        statusDiv.textContent = "Failed to fetch product data.";
-        statusDiv.style.color = "#f66";
+      
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('video-background').style.display = 'block';
+      document.getElementById('ar-button').style.display = 'none';
+      
+      updateStatus('Tracking Torso...', true, true);
+      startTracking();
+      
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'AR_STARTED'
+        }));
       }
     }
 
-    // Start
-    openCamera();
-
-    const productId = getQueryParam('productId');
-    fetchModelUrl(productId);
-
-    // Handle resizing
-    window.addEventListener('resize', () => {
-      if (renderer && camera3d) {
-        camera3d.aspect = window.innerWidth / window.innerHeight;
-        camera3d.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+    // Start body tracking and rendering
+    function startTracking() {
+      function animate() {
+        animationId = requestAnimationFrame(animate);
+        
+        // Update body tracking (limit to 10fps for better performance)
+        const now = Date.now();
+        if (now - lastTrackingTime > 100) {
+          trackTorso();
+          lastTrackingTime = now;
+        }
+        
+        // Update model position
+        if (clothingModel && isModelLoaded) {
+          updateClothingPosition();
+        }
+        
+        // Update debug info
+        updateDebugInfo();
+        
+        renderer.render(scene, camera);
       }
-    });
+      animate();
+    }
+
+    // Track torso position using both PoseNet and BodyPix
+    async function trackTorso() {
+      if (!bodyPixNet || !videoElement || !isVideoReady) return;
+      
+      try {
+        // Create canvas for processing
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Use medium resolution for balance between performance and accuracy
+        canvas.width = 320;
+        canvas.height = 240;
+        
+        // Draw the video WITHOUT flipping - we'll handle mirroring in the 3D positioning
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        
+        let torsoData = null;
+        
+        // Try PoseNet first for more accurate torso detection
+        if (isPoseNetLoaded && poseNet) {
+          try {
+            const pose = await poseNet.estimateSinglePose(canvas, {
+              flipHorizontal: false // No flipping needed since we handle it in 3D positioning
+            });
+            
+            if (pose && pose.score > 0.3) {
+              torsoData = extractTorsoFromPose(pose, canvas.width, canvas.height);
+            }
+          } catch (error) {
+            console.warn('PoseNet tracking failed, falling back to BodyPix');
+          }
+        }
+        
+        // Fallback to BodyPix segmentation
+        if (!torsoData) {
+          const segmentation = await bodyPixNet.segmentPerson(canvas, {
+            flipHorizontal: false,
+            internalResolution: 'medium',
+            segmentationThreshold: 0.7
+          });
+          
+          if (segmentation && segmentation.data) {
+            torsoData = extractTorsoFromSegmentation(segmentation);
+          }
+        }
+        
+        if (torsoData) {
+          // Smooth tracking with adaptive smoothing
+          const adaptiveSmoothingFactor = Math.max(0.1, smoothingFactor * torsoData.confidence);
+          
+          bodyTracking.torsoX += (torsoData.torsoX - bodyTracking.torsoX) * adaptiveSmoothingFactor;
+          bodyTracking.torsoY += (torsoData.torsoY - bodyTracking.torsoY) * adaptiveSmoothingFactor;
+          bodyTracking.shoulderWidth += (torsoData.shoulderWidth - bodyTracking.shoulderWidth) * adaptiveSmoothingFactor;
+          bodyTracking.torsoHeight += (torsoData.torsoHeight - bodyTracking.torsoHeight) * adaptiveSmoothingFactor;
+          bodyTracking.scale += (torsoData.scale - bodyTracking.scale) * adaptiveSmoothingFactor;
+          bodyTracking.rotation += (torsoData.rotation - bodyTracking.rotation) * adaptiveSmoothingFactor * 0.5;
+          bodyTracking.confidence = torsoData.confidence;
+          
+          updateStatus(`Torso Tracked (${Math.round(torsoData.confidence * 100)}%)`, true);
+        } else {
+          bodyTracking.confidence *= 0.95; // Decay confidence when no detection
+          updateStatus('Searching for torso...', false, true);
+        }
+        
+      } catch (error) {
+        console.warn('Torso tracking error:', error);
+      }
+    }
+
+    // Extract torso position from PoseNet pose
+    function extractTorsoFromPose(pose, width, height) {
+      const keypoints = pose.keypoints;
+      
+      // Find key torso points
+      const leftShoulder = keypoints.find(kp => kp.part === 'leftShoulder');
+      const rightShoulder = keypoints.find(kp => kp.part === 'rightShoulder');
+      const leftHip = keypoints.find(kp => kp.part === 'leftHip');
+      const rightHip = keypoints.find(kp => kp.part === 'rightHip');
+      
+      // Check if we have minimum required points
+      const validShoulders = leftShoulder?.score > 0.3 && rightShoulder?.score > 0.3;
+      const validHips = leftHip?.score > 0.3 && rightHip?.score > 0.3;
+      
+      if (!validShoulders && !validHips) return null;
+      
+      let torsoX = 0, torsoY = 0, shoulderWidth = 0, torsoHeight = 0, confidence = 0;
+      
+      if (validShoulders) {
+        // Calculate torso center from shoulders
+        torsoX = (leftShoulder.position.x + rightShoulder.position.x) / 2;
+        shoulderWidth = Math.abs(rightShoulder.position.x - leftShoulder.position.x);
+        confidence += 0.5;
+        
+        if (validHips) {
+          // Calculate torso center including hips
+          const hipX = (leftHip.position.x + rightHip.position.x) / 2;
+          const hipY = (leftHip.position.y + rightHip.position.y) / 2;
+          const shoulderY = (leftShoulder.position.y + rightShoulder.position.y) / 2;
+          
+          torsoX = (torsoX + hipX) / 2;
+          torsoY = (shoulderY + hipY) / 2;
+          torsoHeight = Math.abs(hipY - shoulderY);
+          confidence += 0.3;
+        } else {
+          torsoY = (leftShoulder.position.y + rightShoulder.position.y) / 2;
+          torsoHeight = shoulderWidth * 1.2; // Estimate torso height
+          confidence += 0.1;
+        }
+      }
+      
+      // Calculate body rotation from shoulder angle
+      let rotation = 0;
+      if (validShoulders) {
+        const shoulderAngle = Math.atan2(
+          rightShoulder.position.y - leftShoulder.position.y,
+          rightShoulder.position.x - leftShoulder.position.x
+        );
+        rotation = shoulderAngle;
+      }
+      
+      // Normalize coordinates to -1 to 1 range
+      const normalizedX = (torsoX / width - 0.5) * 2;
+      const normalizedY = -((torsoY / height - 0.5) * 2); // Flip Y axis
+      
+      // Calculate scale based on shoulder width and torso height (closer = bigger)
+      const baseScale = Math.max(shoulderWidth, torsoHeight) / Math.min(width, height) * 2;
+      const depthScale = Math.max(1.0, baseScale * 4); // Increase sensitivity to distance
+      
+      return {
+        torsoX: normalizedX,
+        torsoY: normalizedY - 0.2, // Move shirt down significantly more
+        shoulderWidth: shoulderWidth / width,
+        torsoHeight: torsoHeight / height,
+        scale: Math.max(0.5, Math.min(4.0, depthScale)), // Allow bigger range
+        rotation: rotation,
+        confidence: Math.min(1, confidence)
+      };
+    }
+
+    // Extract torso position from BodyPix segmentation (fallback method)
+    function extractTorsoFromSegmentation(segmentation) {
+      const { data, width, height } = segmentation;
+      
+      // Focus on the chest/upper torso region (move down from head)
+      const torsoTop = Math.floor(height * 0.35);    // Start lower, below neck/head
+      const torsoBottom = Math.floor(height * 0.80);  // Extend down to waist
+      const torsoLeft = Math.floor(width * 0.20);
+      const torsoRight = Math.floor(width * 0.80);
+      
+      let minX = width, maxX = 0, minY = height, maxY = 0;
+      let torsoPixels = 0;
+      let centerX = 0, centerY = 0;
+      
+      // Analyze only the torso region
+      for (let y = torsoTop; y < torsoBottom; y++) {
+        for (let x = torsoLeft; x < torsoRight; x++) {
+          const index = y * width + x;
+          if (data[index] > 0) {
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+            centerX += x;
+            centerY += y;
+            torsoPixels++;
+          }
+        }
+      }
+      
+      if (torsoPixels < 50) return null;
+      
+      // Calculate torso center
+      centerX = centerX / torsoPixels;
+      centerY = centerY / torsoPixels;
+      
+      // Calculate torso dimensions
+      const torsoWidth = (maxX - minX) / width;
+      const torsoHeight = (maxY - minY) / height;
+      
+      // Normalize coordinates
+      const normalizedX = (centerX / width - 0.5) * 2;
+      const normalizedY = -((centerY / height - 0.5) * 2);
+      
+      // Calculate scale and confidence (closer = bigger)
+      const baseScale = Math.sqrt(torsoWidth * torsoHeight) * 4;
+      const depthScale = Math.max(1.0, baseScale * 2); // Increase sensitivity to distance
+      const confidence = Math.min(1, torsoPixels / ((torsoRight - torsoLeft) * (torsoBottom - torsoTop) * 0.3));
+      
+      return {
+        torsoX: normalizedX,
+        torsoY: normalizedY - 0.3, // Move shirt down more for segmentation method
+        shoulderWidth: torsoWidth,
+        torsoHeight: torsoHeight,
+        scale: Math.max(0.5, Math.min(4.0, depthScale)), // Allow bigger range
+        rotation: 0, // No rotation info from segmentation
+        confidence: confidence
+      };
+    }
+
+    // Update clothing model position to match torso
+    function updateClothingPosition() {
+      if (!clothingModel || bodyTracking.confidence < 0.1) return;
+      
+      // Position model to match torso center - MIRROR BEHAVIOR for front camera
+      // When you move right, the clothing should move right (like a real mirror)
+      // Since the video is already mirrored with CSS, we need to flip the X coordinate
+      clothingModel.position.x = -bodyTracking.torsoX * 0.8; // Flip X for natural mirror movement
+      clothingModel.position.y = bodyTracking.torsoY * 0.8 - 0.3; // Move shirt down significantly
+      clothingModel.position.z = 0;
+      
+      // Scale model to match torso size with distance sensitivity
+      const targetScale = Math.max(0.4, Math.min(3.0, bodyTracking.scale * 0.8));
+      clothingModel.scale.setScalar(targetScale);
+      
+      // Apply subtle rotation based on body pose - MIRROR BEHAVIOR
+      clothingModel.rotation.z = -bodyTracking.rotation * 0.3; // Flip rotation for mirror effect
+      clothingModel.rotation.y = -bodyTracking.torsoX * 0.2; // Flip Y rotation for mirror effect
+      
+      // Adjust opacity based on tracking confidence
+      clothingModel.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material.opacity = 0.75 + (bodyTracking.confidence * 0.15);
+        }
+      });
+    }
+
+    // Public function for React Native to load models
+    window.setModelUrl = function(url) {
+      console.log('Loading model from URL:', url);
+      loadClothingModel(url);
+    };
+
+    // Cleanup function
+    window.cleanupAR = function() {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      if (videoElement && videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+    };
+
+    // Start the application
+    init();
   </script>
 </body>
-
-</html> -->
+</html>

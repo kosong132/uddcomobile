@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 // const API_URL = 'http://10.0.2.2:8080/orders';
 // const API_URL = 'http://192.168.58.154/orders';
-const API_URL = 'http://10.211.97.163:8080'; // Update with your actual API URL
+const API_URL = 'https://uddco.onrender.com'; // Update with your actual API URL
 import AppLayout from '../../layouts/AppLayout';
 
 const Tab = createMaterialTopTabNavigator();

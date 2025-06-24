@@ -18,7 +18,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import AppLayout from '../../layouts/AppLayout';
 import { Picker } from '@react-native-picker/picker';
 
-const API_URL = 'http://10.211.97.163:8080';
+const API_URL = 'https://uddco.onrender.com';
 
 const logoPositions = [
   { id: 'left_breast', name: 'Left Breast', image: require('../../assets/left-breast.png') },
@@ -183,8 +183,8 @@ const renderItem = ({ item }) => {
       <Image source={{ uri: productImageUrl }} style={styles.image} />
       <View style={{ flex: 1, marginLeft: 10, justifyContent: 'center' }}>
         <Text numberOfLines={1} style={styles.title}>{item.productName}</Text>
-        <Text>Color: {item.selectedColor}</Text>
-        <Text>Size: {item.selectedSize}</Text>
+        <Text style={styles.detailText}>Color: {item.selectedColor}</Text>
+        <Text style={styles.detailText}>Size: {item.selectedSize}</Text>
         <View style={styles.quantityRow}>
           <Button
             title="−"
@@ -241,36 +241,48 @@ const renderItem = ({ item }) => {
 
                 {/* Color Dropdown */}
                 <Text style={styles.label}>Color:</Text>
-                <Picker
-                  selectedValue={selectedItem.selectedColor}
-                  onValueChange={val => onChangeSelection('selectedColor', val)}
-                >
-                  {productDetailsMap[selectedItem.productId]?.colors?.map(c => (
-                    <Picker.Item key={c.id || c.name} label={c.name || c} value={c.name || c} />
-                  ))}
-                </Picker>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={selectedItem.selectedColor}
+                    onValueChange={val => onChangeSelection('selectedColor', val)}
+                    style={styles.picker}
+                  >
+                    {productDetailsMap[selectedItem.productId]?.colors?.map(c => (
+                      <Picker.Item key={c.id || c.name} label={c.name || c} value={c.name || c} />
+                    )) || []}
+                  </Picker>
+                </View>
+                <Text style={styles.selectedValueText}>Selected: {selectedItem.selectedColor}</Text>
 
                 {/* Size Dropdown */}
                 <Text style={styles.label}>Size:</Text>
-                <Picker
-                  selectedValue={selectedItem.selectedSize}
-                  onValueChange={val => onChangeSelection('selectedSize', val)}
-                >
-                  {productDetailsMap[selectedItem.productId]?.availableSizes?.map(size => (
-                    <Picker.Item key={size} label={size} value={size} />
-                  ))}
-                </Picker>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={selectedItem.selectedSize}
+                    onValueChange={val => onChangeSelection('selectedSize', val)}
+                    style={styles.picker}
+                  >
+                    {productDetailsMap[selectedItem.productId]?.availableSizes?.map(size => (
+                      <Picker.Item key={size} label={size} value={size} />
+                    )) || []}
+                  </Picker>
+                </View>
+                <Text style={styles.selectedValueText}>Selected: {selectedItem.selectedSize}</Text>
 
                 {/* Customization Dropdown */}
                 <Text style={styles.label}>Customization:</Text>
-                <Picker
-                  selectedValue={selectedItem.selectedCustomization}
-                  onValueChange={val => onChangeSelection('selectedCustomization', val)}
-                >
-                  {productDetailsMap[selectedItem.productId]?.customizationOptions?.map(opt => (
-                    <Picker.Item key={opt} label={opt} value={opt} />
-                  ))}
-                </Picker>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={selectedItem.selectedCustomization}
+                    onValueChange={val => onChangeSelection('selectedCustomization', val)}
+                    style={styles.picker}
+                  >
+                    {productDetailsMap[selectedItem.productId]?.customizationOptions?.map(opt => (
+                      <Picker.Item key={opt} label={opt} value={opt} />
+                    )) || []}
+                  </Picker>
+                </View>
+                <Text style={styles.selectedValueText}>Selected: {selectedItem.selectedCustomization}</Text>
 
                 {/* Logo Position Dropdown with images */}
                 <Text style={styles.label}>Logo Position:</Text>
@@ -320,11 +332,11 @@ const renderItem = ({ item }) => {
 
 const styles = StyleSheet.create({
   header: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 15,
     marginTop: 10,
-    alignSelf: 'center',
+    marginLeft: 20,
   },
   empty: {
     fontSize: 18,
@@ -352,9 +364,15 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   title: {
-    fontWeight: '700',
-    fontSize: 16,
+    fontWeight: 'bold',
+    fontSize: 14,
     marginBottom: 4,
+    color: '#000',
+  },
+  detailText: {
+    fontSize: 12,
+    color: '#000',
+    marginBottom: 2,
   },
   quantityRow: {
     flexDirection: 'row',
@@ -363,9 +381,10 @@ const styles = StyleSheet.create({
   },
   quantityText: {
     marginHorizontal: 10,
-    fontSize: 18,
+    fontSize: 14,
     minWidth: 30,
     textAlign: 'center',
+    color: '#000',
   },
   modalOverlay: {
     flex: 1,
@@ -394,6 +413,25 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: '600',
     marginTop: 15,
+    color: '#000',
+    fontSize: 16,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginTop: 5,
+    backgroundColor: '#fff',
+  },
+  picker: {
+    height: 50,
+    color: '#000',
+  },
+  selectedValueText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 5,
+    fontStyle: 'italic',
   },
   logoPositionContainer: {
     flexDirection: 'row',
@@ -422,9 +460,9 @@ const styles = StyleSheet.create({
   },
   priceText: {
     marginTop: 12,
-    fontWeight: '700',
-    fontSize: 16,
+    fontWeight: 'bold',
+    fontSize: 14,
+    color: '#000',
   },
 });
-
 export default WishlistScreen;

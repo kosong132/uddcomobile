@@ -17,7 +17,7 @@ const ProductDetails = ({ navigation, route }) => {
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedCustomization, setSelectedCustomization] = useState(null);
- const API_BASE = 'http://10.211.97.163:8080'; // or `10.0.2.2` for emulator
+ const API_BASE = 'https://uddco.onrender.com'; // or `10.0.2.2` for emulator
 // 192.168.58.154  
 // const API_BASE = 'http://192.168.58.154:8080';
 useEffect(() => {

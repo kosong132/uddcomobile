@@ -16,6 +16,9 @@ import OrderScreen from '../screens/App/Order';
 import ProductDetailsScreen from '../screens/App/ProductDetailsScreen';
 import CustomizeScreen from '../screens/App/CustomizeScreen';
 import ARFittingScreen from '../screens/App/ARFittingScreen'; // Import ARFittingScreen
+import ProfessionalClothingShowroom from '../screens/App/ProfessionalClothingShowroom'; // Import ProfessionalClothingShowroom
+import MyProfileScreen from '../screens/App/MyProfileScreen';
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -28,6 +31,8 @@ const AppNavigator = () => {
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       <Stack.Screen name="ARFittingScreen" component={ARFittingScreen} />
+      <Stack.Screen name="ProfessionalClothingShowroom" component={ProfessionalClothingShowroom} />
+      <Stack.Screen name="MyProfile" component={MyProfileScreen} />
       {/* Home and other screens after sign-in */}
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Order" component={OrderScreen} />

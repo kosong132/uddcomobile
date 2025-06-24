@@ -42,6 +42,9 @@ const ResetPasswordScreen = ({ navigation, route }) => {
         keyboardType="numeric"
         maxLength={6}
         style={styles.input}
+         placeholderTextColor="#999"
+        autoCapitalize="none"
+        autoCorrect={false}
       />
       <TextInput
         placeholder="New Password"
@@ -49,6 +52,9 @@ const ResetPasswordScreen = ({ navigation, route }) => {
         value={newPassword}
         onChangeText={setNewPassword}
         style={styles.input}
+         placeholderTextColor="#999"
+        autoCapitalize="none"
+        autoCorrect={false}
       />
       <TouchableOpacity style={styles.button} onPress={handleReset}>
         <Text style={styles.buttonText}>Reset Password</Text>

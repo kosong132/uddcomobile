@@ -51,18 +51,27 @@ const RegisterScreen = ({ navigation }) => {
         value={username}
         onChangeText={setUsername}
         style={styles.input}
+         placeholderTextColor="#999"
+        autoCapitalize="none"
+        autoCorrect={false}
       />
       <TextInput
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
         style={styles.input}
+         placeholderTextColor="#999"
+        autoCapitalize="none"
+        autoCorrect={false}
       />
       <TextInput
         placeholder="Phone Number"
         value={phoneNumber}
         onChangeText={setPhoneNumber}
         style={styles.input}
+         placeholderTextColor="#999"
+        autoCapitalize="none"
+        autoCorrect={false}
       />
       <TextInput
         placeholder="Password"
@@ -70,6 +79,9 @@ const RegisterScreen = ({ navigation }) => {
         value={password}
         onChangeText={setPassword}
         style={styles.input}
+         placeholderTextColor="#999"
+        autoCapitalize="none"
+        autoCorrect={false}
       />
 
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
