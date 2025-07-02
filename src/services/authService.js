@@ -12,7 +12,7 @@ export const register = (username, email, phoneNumber, password) => {
   return axios.post(`${API_URL}/register`, {
     username,
     email,
-    phoneNumber,
+    phoneNumber: phoneNumber.toString(), 
     password,
     role: 'Customer',     // <-- Added
     userLevel: 2          // <-- Added

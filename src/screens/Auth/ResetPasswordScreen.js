@@ -24,7 +24,7 @@ const ResetPasswordScreen = ({ navigation, route }) => {
   
     try {
       await resetPassword(trimmedOtp, newPassword);
-      Alert.alert('Success', 'Password reset successfully!');
+      Alert.alert('Success', 'Password reset successful!');
       navigation.navigate('SignIn');
     } catch (error) {
       console.log("❌ [FRONTEND] Error:", error.response?.data || error.message);

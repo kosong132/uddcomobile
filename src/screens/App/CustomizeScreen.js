@@ -253,7 +253,7 @@ const CustomizeScreen = ({ route, navigation }) => {
                                     Alert.alert('AR Model Missing', '3D model is not available for this product.');
                                     return;
                                 }
-                                navigation.navigate('ProfessionalClothingShowroom', {
+                                navigation.navigate('ARFittingScreen', {
                                     productId: product.id,
                                     modelUrl: product.modelUrl,
                                     productName: product.name,

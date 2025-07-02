@@ -67,7 +67,7 @@ const RegisterScreen = ({ navigation }) => {
       <TextInput
         placeholder="Phone Number"
         value={phoneNumber}
-        onChangeText={setPhoneNumber}
+       onChangeText={(text) => setPhoneNumber(text.replace(/[^0-9]/g, ''))} // only digits
         style={styles.input}
          placeholderTextColor="#999"
         autoCapitalize="none"
